@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'navbar_page.dart';
+import 'features/education/page/education_list_page.dart';
 
 void main() {
   runApp(const MyApp());

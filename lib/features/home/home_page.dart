@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'page/booking_page.dart';
+
+import 'package:dvpets/features/education/page/education_list_page.dart';
+import 'package:dvpets/features/education/services/education_services.dart';
+import 'package:dvpets/models/education_model.dart';
+import 'package:dvpets/core/constants/api_constants.dart';
+import 'package:dvpets/features/home/page/booking_page.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -279,38 +284,65 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-class SpecialOffers extends StatelessWidget {
-  const SpecialOffers({Key? key}) : super(key: key);
+class SpecialOffers extends StatefulWidget {
+  const SpecialOffers({super.key});
+
+  @override
+  State<SpecialOffers> createState() => _SpecialOffersState();
+}
+
+class _SpecialOffersState extends State<SpecialOffers> {
+  final EducationService _service = EducationService();
+  late Future<List<Education>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _service.fetchEducation();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: SectionTitle(title: "Special for you", press: () {}),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              SpecialOfferCard(
-                image: "https://i.postimg.cc/yY2bNrmd/Image-Banner-2.png",
-                category: "Smartphone",
-                numOfBrands: 18,
-                press: () {},
+    return FutureBuilder<List<Education>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text(snapshot.error.toString()));
+        }
+
+        final list = snapshot.data!;
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SectionTitle(title: "Education", press: () {}),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...List.generate(list.length, (index) {
+                    final edu = list[index];
+
+                    return SpecialOfferCard(
+                      image: edu.thumbnailUrl,
+                      category: edu.title,
+                      numOfBrands: 0, // bisa diganti kalau ada data lain
+                      press: () {},
+                    );
+                  }),
+                  const SizedBox(width: 20),
+                ],
               ),
-              SpecialOfferCard(
-                image: "https://i.postimg.cc/BQjz4G1k/Image-Banner-3.png",
-                category: "Fashion",
-                numOfBrands: 24,
-                press: () {},
-              ),
-              const SizedBox(width: 20),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -336,10 +368,11 @@ class SpecialOfferCard extends StatelessWidget {
         onTap: press,
         child: SizedBox(
           width: 242,
-          height: 100,
+          height: 180,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Stack(
+              fit: StackFit.expand,
               children: [
                 Image.network(image, fit: BoxFit.cover),
                 Container(

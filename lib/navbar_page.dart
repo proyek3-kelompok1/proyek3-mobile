@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'screens/home/home_screen.dart';
-import 'screens/profile/profile_screen.dart';
+import 'features/home/home_page.dart';
+import 'features/profile/profile_screen.dart';
 import 'navbar/curved_navigation_bar.dart';
-import 'screens/home/page/booking_page.dart';
+import 'features/home/page/booking_page.dart';
+import 'features/home/page/services_page.dart';
 
 class NavBarPage extends StatefulWidget {
   const NavBarPage({super.key});
@@ -16,6 +17,7 @@ class _NavBarPageState extends State<NavBarPage> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
+    // const BookingPage(), ServicesPage(),
     const BookingPage(),
     const ProfileScreen(),
   ];
