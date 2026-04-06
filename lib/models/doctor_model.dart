@@ -1,16 +1,22 @@
 class DoctorModel {
   final int id;
   final String name;
-  final String specialty;
+  final String specialization;
+  final String? schedule;
   final String? photo;
+  final String? photoUrl;
+  final String? description;
   final double rating;
   final int queue;
 
   DoctorModel({
     required this.id,
     required this.name,
-    required this.specialty,
+    required this.specialization,
+    this.schedule,
     this.photo,
+    this.photoUrl,
+    this.description,
     required this.rating,
     required this.queue,
   });
@@ -19,8 +25,11 @@ class DoctorModel {
     return DoctorModel(
       id: json['id'],
       name: json['name'],
-      specialty: json['specialty'] ?? '',
+      specialization: json['specialization'] ?? json['specialty'] ?? '',
+      schedule: json['schedule'],
       photo: json['photo'],
+      photoUrl: json['photo_url'],
+      description: json['description'],
       rating: (json['rating'] ?? 0).toDouble(),
       queue: json['queue'] ?? 0,
     );

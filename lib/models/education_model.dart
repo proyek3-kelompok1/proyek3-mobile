@@ -6,6 +6,7 @@ class Education {
   final String content;
   final String thumbnailUrl;
   final String? level;
+  final String? description;
   final String? readingTime;
   final int view;
   final String? formattedDate;
@@ -18,6 +19,7 @@ class Education {
     required this.content,
     required this.thumbnailUrl,
     this.level,
+    this.description,
     this.readingTime,
     required this.view,
     this.formattedDate,
