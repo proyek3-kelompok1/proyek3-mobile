@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:dvpets/features/education/page/education_list_page.dart';
+import 'package:dvpets/features/education/page/education_detail_page.dart';
 import 'package:dvpets/features/education/services/education_services.dart';
 import 'package:dvpets/models/education_model.dart';
 import 'package:dvpets/core/constants/api_constants.dart';
 import 'package:dvpets/features/home/page/booking_page.dart';
+import 'package:dvpets/features/consultation/doctor_list_page.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -205,7 +207,7 @@ class Categories extends StatelessWidget {
       {
         "icon": consultationIcon,
         "text": "Consultation",
-        // "page": const ConsultationPage(),
+        "page": const DoctorListPage(),
       },
       {
         "icon": vaccineIcon,
@@ -320,7 +322,17 @@ class _SpecialOffersState extends State<SpecialOffers> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SectionTitle(title: "Education", press: () {}),
+              child: SectionTitle(
+                title: "Education",
+                press: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EducationListPage(),
+                    ),
+                  );
+                },
+              ),
             ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -332,8 +344,15 @@ class _SpecialOffersState extends State<SpecialOffers> {
                     return SpecialOfferCard(
                       image: edu.thumbnailUrl,
                       category: edu.title,
-                      numOfBrands: 0, // bisa diganti kalau ada data lain
-                      press: () {},
+                      viewCount: edu.view,
+                      press: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EducationDetailPage(education: edu),
+                          ),
+                        );
+                      },
                     );
                   }),
                   const SizedBox(width: 20),
@@ -352,12 +371,12 @@ class SpecialOfferCard extends StatelessWidget {
     Key? key,
     required this.category,
     required this.image,
-    required this.numOfBrands,
+    required this.viewCount,
     required this.press,
   }) : super(key: key);
 
   final String category, image;
-  final int numOfBrands;
+  final int viewCount;
   final GestureTapCallback press;
 
   @override
@@ -374,7 +393,18 @@ class SpecialOfferCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.network(image, fit: BoxFit.cover),
+                Image.network(
+                  image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: const Color(0xFFF3EEFF),
+                      child: const Center(
+                        child: Icon(Icons.broken_image, color: Color(0xFF4A3298), size: 40),
+                      ),
+                    );
+                  },
+                ),
                 Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -394,20 +424,34 @@ class SpecialOfferCard extends StatelessWidget {
                     horizontal: 15,
                     vertical: 10,
                   ),
-                  child: Text.rich(
-                    TextSpan(
-                      style: const TextStyle(color: Colors.white),
-                      children: [
-                        TextSpan(
-                          text: "$category\n",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        category,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        TextSpan(text: "$numOfBrands Brands"),
-                      ],
-                    ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.visibility, color: Colors.white70, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            "$viewCount kali dilihat",
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'features/home/home_page.dart';
 import 'features/profile/profile_screen.dart';
 import 'navbar/curved_navigation_bar.dart';
-import 'features/home/page/booking_page.dart';
-import 'features/home/page/services_page.dart';
+import 'features/ai/ai_chat_page.dart';
 
 class NavBarPage extends StatefulWidget {
   const NavBarPage({super.key});
@@ -17,8 +16,7 @@ class _NavBarPageState extends State<NavBarPage> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    // const BookingPage(), ServicesPage(),
-    const BookingPage(),
+    const AiChatPage(),
     const ProfileScreen(),
   ];
 
@@ -34,7 +32,7 @@ class _NavBarPageState extends State<NavBarPage> {
         buttonBackgroundColor: const Color(0xFF4A3298),
         items: const [
           Icon(Icons.home, size: 30, color: Colors.white),
-          Icon(Icons.calendar_month, size: 30, color: Colors.white),
+          Icon(Icons.smart_toy_rounded, size: 30, color: Colors.white),
           Icon(Icons.person, size: 30, color: Colors.white),
         ],
         onTap: (index) {
