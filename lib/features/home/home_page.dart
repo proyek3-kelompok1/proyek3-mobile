@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:dvpets/features/education/page/education_list_page.dart';
 import 'package:dvpets/features/education/page/education_detail_page.dart';
@@ -8,6 +9,9 @@ import 'package:dvpets/models/education_model.dart';
 import 'package:dvpets/core/constants/api_constants.dart';
 import 'package:dvpets/features/home/page/booking_page.dart';
 import 'package:dvpets/features/consultation/doctor_list_page.dart';
+import 'package:dvpets/core/services/booking_history_api.dart';
+import 'package:dvpets/models/booking_model.dart';
+import 'package:dvpets/features/booking/queue_list_page.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -24,7 +28,7 @@ class HomeScreen extends StatelessWidget {
               Categories(),
               SpecialOffers(),
               SizedBox(height: 20),
-              PopularProducts(),
+              BookingHistory(),
               SizedBox(height: 20),
             ],
           ),
@@ -185,10 +189,10 @@ class DiscountBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Kondisi hewan peliharaan Anda",
+                  "DVPets",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 30,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -514,207 +518,411 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-class PopularProducts extends StatelessWidget {
-  const PopularProducts({super.key});
+const _purpleHome = Color(0xFF4A3298);
+const _purpleDarkHome = Color(0xFF2E1D6B);
+const _purpleLightHome = Color(0xFF7C5CBF);
+const _purpleBgHome = Color(0xFFF3EEFF);
+const _grey600Home = Color(0xFF757575);
+const _grey300Home = Color(0xFFE0E0E0);
+
+class BookingHistory extends StatefulWidget {
+  const BookingHistory({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: SectionTitle(title: "Popular Products", press: () {}),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              ...List.generate(demoProducts.length, (index) {
-                if (demoProducts[index].isPopular) {
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 20),
-                    child: ProductCard(
-                      product: demoProducts[index],
-                      onPress: () {},
-                    ),
-                  );
-                }
-
-                return const SizedBox.shrink(); // here by default width and height is 0
-              }),
-              const SizedBox(width: 20),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  State<BookingHistory> createState() => _BookingHistoryState();
 }
 
-class ProductCard extends StatelessWidget {
-  const ProductCard({
-    Key? key,
-    this.width = 140,
-    this.aspectRetio = 1.02,
-    required this.product,
-    required this.onPress,
-  }) : super(key: key);
+class _BookingHistoryState extends State<BookingHistory> {
+  late Future<List<BookingModel>> _future;
 
-  final double width, aspectRetio;
-  final Product product;
-  final VoidCallback onPress;
+  @override
+  void initState() {
+    super.initState();
+    _future = BookingHistoryApi.fetchActiveBookings();
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+  String _formatNumber(int n) {
+    return n.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+  }
+
+  int _daysUntil(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      return date.difference(today).inDays;
+    } catch (_) {
+      return 0;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: GestureDetector(
-        onTap: onPress,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 1.02,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF979797).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Image.network(product.images[0]),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              product.title,
-              style: Theme.of(context).textTheme.bodyMedium,
-              maxLines: 2,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return FutureBuilder<List<BookingModel>>(
+      future: _future,
+      builder: (context, snapshot) {
+        // Don't show section at all if loading or error or empty
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
               children: [
-                Text(
-                  "\$${product.price}",
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFFF7643),
-                  ),
-                ),
-                InkWell(
-                  borderRadius: BorderRadius.circular(50),
-                  onTap: () {},
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    height: 24,
-                    width: 24,
-                    decoration: BoxDecoration(
-                      color: product.isFavourite
-                          ? const Color(0xFFFF7643).withOpacity(0.15)
-                          : const Color(0xFF979797).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: SvgPicture.string(
-                      heartIcon,
-                      colorFilter: ColorFilter.mode(
-                        product.isFavourite
-                            ? const Color(0xFFFF4848)
-                            : const Color(0xFFDBDEE4),
-                        BlendMode.srcIn,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Riwayat Booking",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
                       ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation(_purpleHome),
                     ),
                   ),
                 ),
               ],
             ),
+          );
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                SectionTitle(
+                  title: "Riwayat Booking",
+                  press: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const QueueListPage()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: _purpleBgHome,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _purpleLightHome.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.event_note_rounded, color: _grey300Home, size: 40),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Belum ada booking aktif",
+                        style: GoogleFonts.poppins(fontSize: 13, color: _grey600Home, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Booking sekarang untuk hewan peliharaan Anda",
+                        style: GoogleFonts.poppins(fontSize: 11, color: _grey600Home),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final bookings = snapshot.data!;
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SectionTitle(
+                title: "Riwayat Booking",
+                press: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QueueListPage()),
+                  );
+                },
+              ),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...List.generate(bookings.length, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 20),
+                      child: _BookingCard(
+                        booking: bookings[index],
+                        daysUntil: _daysUntil(bookings[index].bookingDate),
+                        formatDate: _formatDate,
+                        formatNumber: _formatNumber,
+                      ),
+                    );
+                  }),
+                  const SizedBox(width: 20),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _BookingCard extends StatelessWidget {
+  final BookingModel booking;
+  final int daysUntil;
+  final String Function(String) formatDate;
+  final String Function(int) formatNumber;
+
+  const _BookingCard({
+    required this.booking,
+    required this.daysUntil,
+    required this.formatDate,
+    required this.formatNumber,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isToday = daysUntil == 0;
+    final isTomorrow = daysUntil == 1;
+
+    String urgencyText;
+    Color urgencyColor;
+    if (isToday) {
+      urgencyText = 'HARI INI';
+      urgencyColor = const Color(0xFFF44336);
+    } else if (isTomorrow) {
+      urgencyText = 'BESOK';
+      urgencyColor = const Color(0xFFFF9800);
+    } else {
+      urgencyText = '$daysUntil HARI LAGI';
+      urgencyColor = _purpleHome;
+    }
+
+    // Status badge
+    String statusText;
+    Color statusColor;
+    switch (booking.status) {
+      case 'confirmed':
+        statusText = 'Dikonfirmasi';
+        statusColor = const Color(0xFF4CAF50);
+        break;
+      case 'completed':
+        statusText = 'Selesai';
+        statusColor = _grey600Home;
+        break;
+      case 'cancelled':
+        statusText = 'Dibatalkan';
+        statusColor = const Color(0xFFF44336);
+        break;
+      default:
+        statusText = 'Menunggu';
+        statusColor = const Color(0xFFFF9800);
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => QueueListPage(initialBookingCode: booking.bookingCode),
+          ),
+        );
+      },
+      child: Container(
+        width: 280,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isToday
+                ? const Color(0xFFF44336).withOpacity(0.3)
+                : _purpleLightHome.withOpacity(0.25),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isToday ? const Color(0xFFF44336) : _purpleHome)
+                  .withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top row: Queue number + urgency badge
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'A${booking.nomorAntrian.toString().padLeft(3, '0')}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF4CAF50),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: urgencyColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    urgencyText,
+                    style: GoogleFonts.poppins(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: urgencyColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Service name
+            Text(
+              booking.serviceName,
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: _purpleDarkHome,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+
+            // Doctor
+            Row(
+              children: [
+                const Icon(Icons.person_rounded, color: _purpleLightHome, size: 14),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    booking.doctorName,
+                    style: GoogleFonts.poppins(fontSize: 11, color: _grey600Home),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Date + Time row
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded, color: _purpleLightHome, size: 12),
+                const SizedBox(width: 4),
+                Text(
+                  formatDate(booking.bookingDate),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _purpleDarkHome,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Icon(Icons.access_time_rounded, color: _purpleLightHome, size: 12),
+                const SizedBox(width: 4),
+                Text(
+                  booking.bookingTime,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _purpleDarkHome,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Bottom row: status + price
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    statusText,
+                    style: GoogleFonts.poppins(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: statusColor,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  'Rp ${formatNumber(booking.totalPrice)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _purpleHome,
+                  ),
+                ),
+              ],
+            ),
+
+            // Pet info
+            if (booking.namaHewan != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.pets_rounded, color: _purpleLightHome, size: 12),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${booking.namaHewan} (${booking.jenisHewan ?? ""})',
+                    style: GoogleFonts.poppins(fontSize: 10, color: _grey600Home),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 }
-
-class Product {
-  final int id;
-  final String title, description;
-  final List<String> images;
-  final List<Color> colors;
-  final double rating, price;
-  final bool isFavourite, isPopular;
-
-  Product({
-    required this.id,
-    required this.images,
-    required this.colors,
-    this.rating = 0.0,
-    this.isFavourite = false,
-    this.isPopular = false,
-    required this.title,
-    required this.price,
-    required this.description,
-  });
-}
-
-// Our demo Products
-
-List<Product> demoProducts = [
-  Product(
-    id: 1,
-    images: ["https://i.postimg.cc/c19zpJ6f/Image-Popular-Product-1.png"],
-    colors: [
-      const Color(0xFFF6625E),
-      const Color(0xFF836DB8),
-      const Color(0xFFDECB9C),
-      Colors.white,
-    ],
-    title: "Wireless Controller for PS4™",
-    price: 64.99,
-    description: description,
-    rating: 4.8,
-    isFavourite: true,
-    isPopular: true,
-  ),
-  Product(
-    id: 2,
-    images: ["https://i.postimg.cc/CxD6nH74/Image-Popular-Product-2.png"],
-    colors: [
-      const Color(0xFFF6625E),
-      const Color(0xFF836DB8),
-      const Color(0xFFDECB9C),
-      Colors.white,
-    ],
-    title: "Nike Sport White - Man Pant",
-    price: 50.5,
-    description: description,
-    rating: 4.1,
-    isPopular: true,
-  ),
-  Product(
-    id: 3,
-    images: ["https://i.postimg.cc/1XjYwvbv/glap.png"],
-    colors: [
-      const Color(0xFFF6625E),
-      const Color(0xFF836DB8),
-      const Color(0xFFDECB9C),
-      Colors.white,
-    ],
-    title: "Gloves XC Omega - Polygon",
-    price: 36.55,
-    description: description,
-    rating: 4.1,
-    isFavourite: true,
-    isPopular: true,
-  ),
-];
-
-const heartIcon =
-    '''<svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M16.5266 8.61383L9.27142 15.8877C9.12207 16.0374 8.87889 16.0374 8.72858 15.8877L1.47343 8.61383C0.523696 7.66069 0 6.39366 0 5.04505C0 3.69644 0.523696 2.42942 1.47343 1.47627C2.45572 0.492411 3.74438 0 5.03399 0C6.3236 0 7.61225 0.492411 8.59454 1.47627C8.81857 1.70088 9.18143 1.70088 9.40641 1.47627C11.3691 -0.491451 14.5629 -0.491451 16.5266 1.47627C17.4763 2.42846 18 3.69548 18 5.04505C18 6.39366 17.4763 7.66165 16.5266 8.61383Z" fill="#DBDEE4"/>
-</svg>
-''';
-
-const String description =
-    "Wireless Controller for PS4™ gives you what you want in your gaming from over precision control your games to sharing …";
 
 // const billIcon =
 //     '''<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">

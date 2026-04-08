@@ -10,11 +10,14 @@ class BookingApi {
     required String telepon,
     required String namaHewan,
     required String jenisHewan,
+    required String ras,
     required int umur,
     required int serviceId,
+    required String serviceType,
     required int doctorId,
     required String bookingDate,
     required String bookingTime,
+    String? catatan,
   }) async {
     final response = await http.post(
       Uri.parse(ApiConstants.booking),
@@ -28,11 +31,14 @@ class BookingApi {
         "telepon": telepon,
         "nama_hewan": namaHewan,
         "jenis_hewan": jenisHewan,
+        "ras": ras,
         "umur": umur,
         "service_id": serviceId,
+        "service_type": serviceType,
         "doctor_id": doctorId,
         "booking_date": bookingDate,
         "booking_time": bookingTime,
+        "catatan": catatan ?? "",
       }),
     );
 
