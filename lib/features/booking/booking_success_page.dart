@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/booking_model.dart';
 import 'queue_list_page.dart';
+import '../../features/home/page/booking_page.dart';
 
 const _purple = Color(0xFF4A3298);
 const _purpleDark = Color(0xFF2E1D6B);
