@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = "http://10.0.174.36:8000/api";
+  static const String baseUrl = "http://10.0.2.2:8000/api";
   static const String education = "$baseUrl/education";
   static const String services = "$baseUrl/services";
   static const String booking = "$baseUrl/bookings";
@@ -8,4 +8,8 @@ class ApiConstants {
   static const String queueList = "$baseUrl/bookings/queue";
   static const String doctors = "$baseUrl/doctors";
   static const String consultations = "$baseUrl/consultations";
+  static const String googleLogin = "$baseUrl/auth/google";
+  static const String profile = "$baseUrl/user";
+  static const String updateProfile = "$baseUrl/user/profile";
+  static const String logout = "$baseUrl/logout";
 }

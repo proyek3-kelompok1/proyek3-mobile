@@ -31,7 +31,7 @@ class BookingModel {
       doctorName: json['doctor_name'] ?? '',
       bookingDate: json['booking_date'] ?? '',
       bookingTime: json['booking_time'] ?? '',
-      totalPrice: json['total_price'] ?? 0,
+      totalPrice: json['total_price'] != null ? double.tryParse(json['total_price'].toString())?.toInt() ?? 0 : 0,
       namaHewan: json['nama_hewan'],
       jenisHewan: json['jenis_hewan'],
       status: json['status'],

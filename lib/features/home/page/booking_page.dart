@@ -33,12 +33,15 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
   final namaPemilik = TextEditingController();
   final email = TextEditingController();
   final telepon = TextEditingController();
+  final alamat = TextEditingController();
   final namaHewan = TextEditingController();
   final umur = TextEditingController();
   final ras = TextEditingController();
+  final ciriWarna = TextEditingController();
   final catatan = TextEditingController();
 
   String jenisHewan = "Kucing";
+  String jenisKelamin = "Jantan";
   DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
   String selectedTime = "09:00";
   bool loading = true;
@@ -71,9 +74,11 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     namaPemilik.dispose();
     email.dispose();
     telepon.dispose();
+    alamat.dispose();
     namaHewan.dispose();
     umur.dispose();
     ras.dispose();
+    ciriWarna.dispose();
     catatan.dispose();
     super.dispose();
   }
@@ -129,10 +134,13 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
         namaPemilik: namaPemilik.text,
         email: email.text,
         telepon: telepon.text,
+        alamat: alamat.text,
         namaHewan: namaHewan.text,
         jenisHewan: jenisHewan,
+        jenisKelamin: jenisKelamin,
         ras: ras.text,
         umur: int.parse(umur.text),
+        ciriWarna: ciriWarna.text,
         serviceId: selectedService!.id,
         serviceType: selectedService!.serviceType,
         doctorId: selectedDoctor!.id,
@@ -408,12 +416,12 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
                 Text(svc.description, style: GoogleFonts.poppins(fontSize: 13, color: _grey600)),
                 const SizedBox(height: 16),
                 Row(children: [
-                  Expanded(child: _infoBox("💰 Harga:", svc.formattedPrice)),
+                  Expanded(child: _infoBox("Harga:", svc.formattedPrice)),
                   const SizedBox(width: 12),
-                  Expanded(child: _infoBox("⏱ Durasi:", svc.formattedDuration)),
+                  Expanded(child: _infoBox("Durasi:", svc.formattedDuration)),
                 ]),
                 const SizedBox(height: 16),
-                Text("📋 Detail Layanan", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: _purple)),
+                Text("Detail Layanan", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: _purple)),
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
@@ -554,22 +562,67 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Form(key: _formKeys[2], child: Column(children: [
+        // Keterangan wajib isi
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.red.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.red.shade200),
+          ),
+          child: Row(children: [
+            Icon(Icons.info_outline_rounded, color: Colors.red.shade400, size: 16),
+            const SizedBox(width: 8),
+            Expanded(child: Text.rich(
+              TextSpan(children: [
+                TextSpan(text: "Kolom bertanda ", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700)),
+                TextSpan(text: "* ", style: GoogleFonts.poppins(fontSize: 13, color: Colors.red, fontWeight: FontWeight.w700)),
+                TextSpan(text: "wajib diisi", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700)),
+              ]),
+            )),
+          ]),
+        ),
+        const SizedBox(height: 12),
         _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _sectionTitle(Icons.person_outline_rounded, "Data Pemilik"),
           const SizedBox(height: 14),
-          _StyledTextField(controller: namaPemilik, label: "Nama Lengkap", hint: "Masukkan nama Anda", icon: Icons.badge_outlined, validator: (v) => (v == null || v.isEmpty) ? "Nama wajib diisi" : null),
+          _StyledTextField(
+            controller: namaPemilik, label: "Nama Lengkap", hint: "Masukkan nama Anda",
+            icon: Icons.badge_outlined, isRequired: true,
+            validator: (v) => (v == null || v.isEmpty) ? "Nama wajib diisi" : null,
+          ),
           const SizedBox(height: 14),
-          _StyledTextField(controller: email, label: "Email", hint: "contoh@email.com", icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, validator: (v) { if (v == null || v.isEmpty) return "Email wajib diisi"; if (!v.contains('@')) return "Email tidak valid"; return null; }),
+          _StyledTextField(
+            controller: email, label: "Email", hint: "contoh@email.com",
+            icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, isRequired: true,
+            validator: (v) { if (v == null || v.isEmpty) return "Email wajib diisi"; if (!v.contains('@')) return "Email tidak valid"; return null; },
+          ),
           const SizedBox(height: 14),
-          _StyledTextField(controller: telepon, label: "Nomor Telepon", hint: "08xxxxxxxxxx", icon: Icons.phone_outlined, keyboardType: TextInputType.phone, validator: (v) => (v == null || v.isEmpty) ? "Telepon wajib diisi" : null),
+          _StyledTextField(
+            controller: telepon, label: "Nomor Telepon", hint: "08xxxxxxxxxx",
+            icon: Icons.phone_outlined, keyboardType: TextInputType.phone, isRequired: true,
+            validator: (v) => (v == null || v.isEmpty) ? "Telepon wajib diisi" : null,
+          ),
+          const SizedBox(height: 14),
+          _StyledTextField(
+            controller: alamat, label: "Alamat", hint: "Masukkan alamat lengkap Anda",
+            icon: Icons.location_on_outlined, isRequired: true,
+            validator: (v) => (v == null || v.isEmpty) ? "Alamat wajib diisi" : null,
+          ),
         ])),
         const SizedBox(height: 14),
         _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _sectionTitle(Icons.pets_rounded, "Data Hewan Peliharaan"),
           const SizedBox(height: 14),
-          _StyledTextField(controller: namaHewan, label: "Nama Hewan", hint: "Nama panggilan", icon: Icons.cruelty_free_outlined, validator: (v) => (v == null || v.isEmpty) ? "Nama hewan wajib diisi" : null),
+          _StyledTextField(
+            controller: namaHewan, label: "Nama Hewan", hint: "Nama panggilan",
+            icon: Icons.cruelty_free_outlined, isRequired: true,
+            validator: (v) => (v == null || v.isEmpty) ? "Nama hewan wajib diisi" : null,
+          ),
           const SizedBox(height: 14),
-          Text("Jenis Hewan", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: _purpleDark)),
+          // Jenis Hewan
+          _RequiredLabel(label: "Jenis Hewan"),
           const SizedBox(height: 8),
           Row(children: ["Kucing", "Anjing"].map((j) {
             final isSel = jenisHewan == j;
@@ -595,13 +648,56 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
             ));
           }).toList()),
           const SizedBox(height: 14),
-          _StyledTextField(controller: ras, label: "Ras", hint: "Contoh: Persia, Poodle", icon: Icons.category_outlined, validator: (v) => (v == null || v.isEmpty) ? "Ras wajib diisi" : null),
+          // Jenis Kelamin
+          _RequiredLabel(label: "Jenis Kelamin"),
+          const SizedBox(height: 8),
+          Row(children: ["Jantan", "Betina"].map((k) {
+            final isSel = jenisKelamin == k;
+            return Expanded(child: Padding(
+              padding: EdgeInsets.only(right: k == "Jantan" ? 6 : 0, left: k == "Betina" ? 6 : 0),
+              child: GestureDetector(
+                onTap: () => setState(() => jenisKelamin = k),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSel ? _purple : _white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isSel ? _purple : _grey300, width: 1.5),
+                  ),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(k == "Jantan" ? Icons.male_rounded : Icons.female_rounded, color: isSel ? _white : _grey600, size: 20),
+                    const SizedBox(width: 6),
+                    Text(k, style: GoogleFonts.poppins(color: isSel ? _white : _purpleDark, fontWeight: FontWeight.w600, fontSize: 13)),
+                  ]),
+                ),
+              ),
+            ));
+          }).toList()),
           const SizedBox(height: 14),
-          _StyledTextField(controller: umur, label: "Umur (bulan)", hint: "Contoh: 12", icon: Icons.cake_outlined, keyboardType: TextInputType.number, validator: (v) => (v == null || v.isEmpty) ? "Umur wajib diisi" : null),
+          _StyledTextField(
+            controller: ras, label: "Ras", hint: "Contoh: Persia, Poodle",
+            icon: Icons.category_outlined, isRequired: true,
+            validator: (v) => (v == null || v.isEmpty) ? "Ras wajib diisi" : null,
+          ),
+          const SizedBox(height: 14),
+          _StyledTextField(
+            controller: umur, label: "Umur (bulan)", hint: "Contoh: 12",
+            icon: Icons.cake_outlined, keyboardType: TextInputType.number, isRequired: true,
+            validator: (v) => (v == null || v.isEmpty) ? "Umur wajib diisi" : null,
+          ),
+          const SizedBox(height: 14),
+          _StyledTextField(
+            controller: ciriWarna, label: "Ciri / Warna", hint: "Contoh: Putih dengan bercak hitam",
+            icon: Icons.palette_outlined, isRequired: true,
+            validator: (v) => (v == null || v.isEmpty) ? "Ciri/warna wajib diisi" : null,
+          ),
         ])),
         const SizedBox(height: 14),
         _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _sectionTitle(Icons.note_alt_outlined, "Catatan Tambahan"),
+          const SizedBox(height: 6),
+          Text("Opsional — tidak wajib diisi", style: GoogleFonts.poppins(fontSize: 11, color: _grey600, fontStyle: FontStyle.italic)),
           const SizedBox(height: 10),
           TextFormField(
             controller: catatan,
@@ -728,17 +824,33 @@ class _GlassCard extends StatelessWidget {
   }
 }
 
+class _RequiredLabel extends StatelessWidget {
+  final String label;
+  const _RequiredLabel({required this.label});
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: _purpleDark)),
+      Text(" *", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.red)),
+    ]);
+  }
+}
+
 class _StyledTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label, hint;
   final IconData icon;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
-  const _StyledTextField({required this.controller, required this.label, required this.hint, required this.icon, this.keyboardType = TextInputType.text, this.validator});
+  final bool isRequired;
+  const _StyledTextField({required this.controller, required this.label, required this.hint, required this.icon, this.keyboardType = TextInputType.text, this.validator, this.isRequired = false});
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: _purpleDark)),
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: _purpleDark)),
+        if (isRequired) Text(" *", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.red)),
+      ]),
       const SizedBox(height: 6),
       TextFormField(
         controller: controller, keyboardType: keyboardType, validator: validator,

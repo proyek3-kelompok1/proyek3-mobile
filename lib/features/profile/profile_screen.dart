@@ -1,10 +1,68 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/services/auth_api.dart';
+import '../auth/login_page.dart';
+import 'edit_profile_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final AuthApi _authApi = AuthApi();
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
+    final prefs = await SharedPreferences.getInstance();
+    final localData = prefs.getString('user_data');
+    
+    if (localData != null) {
+      setState(() {
+        _userData = jsonDecode(localData);
+        _isLoading = false;
+      });
+    }
+
+    // Ambil data terbaru dari API
+    final apiData = await _authApi.getProfile();
+    if (apiData != null) {
+      setState(() {
+        _userData = apiData;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    final success = await _authApi.logout();
+    if (success && mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading && _userData == null) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF4A1059)));
+    }
+
     return SafeArea(
       child: Container(
         color: Colors.white,
@@ -13,20 +71,66 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 10),
-
-              const Text(
+              Text(
                 "Profile",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A1059)),
+                style: GoogleFonts.poppins(
+                  fontSize: 20, 
+                  fontWeight: FontWeight.bold, 
+                  color: const Color(0xFF4A1059)
+                ),
               ),
-
               const SizedBox(height: 20),
-              const ProfilePic(),
+              
+              // Profil Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    ProfilePic(avatarUrl: _userData?['avatar']),
+                    const SizedBox(height: 15),
+                    Text(
+                      _userData?['name'] ?? "User Name",
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF333333),
+                      ),
+                    ),
+                    Text(
+                      _userData?['email'] ?? "email@example.com",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    if (_userData?['phone'] != null)
+                      Text(
+                        _userData!['phone'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: const Color(0xFF4A1059),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              
               const SizedBox(height: 30),
 
               ProfileMenu(
-                text: "My Account",
+                text: "Edit Account",
                 icon: Icons.person_outline,
-                press: () {},
+                press: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditProfileScreen(userData: _userData!),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadUserData();
+                  }
+                },
               ),
               ProfileMenu(
                 text: "Notifications",
@@ -46,7 +150,7 @@ class ProfileScreen extends StatelessWidget {
               ProfileMenu(
                 text: "Log Out",
                 icon: Icons.logout,
-                press: () {},
+                press: _handleLogout,
               ),
             ],
           ),
@@ -71,7 +175,7 @@ class ProfileMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: TextButton(
         style: TextButton.styleFrom(
           foregroundColor: const Color(0xFF4A1059),
@@ -80,27 +184,24 @@ class ProfileMenu extends StatelessWidget {
             borderRadius: BorderRadius.circular(15),
           ),
           backgroundColor: const Color(0xFFF3EEFF),
+          elevation: 0,
         ),
         onPressed: press,
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: const Color(0xFF4A1059),
-              size: 26,
-            ),
+            Icon(icon, color: const Color(0xFF4A1059), size: 24),
             const SizedBox(width: 20),
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(
-                  color: Color(0xFF4A1059),
-                  fontWeight: FontWeight.w600,
+                style: GoogleFonts.poppins(
+                  color: const Color(0xFF4A1059),
+                  fontWeight: FontWeight.w500,
                   fontSize: 15,
                 ),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Color(0xFF4A1059), size: 16),
+            const Icon(Icons.arrow_forward_ios, color: Color(0xFF4A1059), size: 14),
           ],
         ),
       ),
@@ -109,37 +210,31 @@ class ProfileMenu extends StatelessWidget {
 }
 
 class ProfilePic extends StatelessWidget {
-  const ProfilePic({super.key});
+  final String? avatarUrl;
+  const ProfilePic({super.key, this.avatarUrl});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        const CircleAvatar(
-          radius: 60,
-          backgroundColor: Color(0xFFF3EEFF),
-          child: Icon(Icons.person, size: 80, color: Color(0xFF4A1059)),
-        ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: SizedBox(
-            height: 40,
-            width: 40,
-            child: TextButton(
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                backgroundColor: const Color(0xFF4A1059),
-              ),
-              onPressed: () {},
-              child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+    return Center(
+      child: Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF4A1059), width: 2),
+            ),
+            child: CircleAvatar(
+              radius: 60,
+              backgroundColor: const Color(0xFFF3EEFF),
+              backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+              child: avatarUrl == null 
+                  ? const Icon(Icons.person, size: 80, color: Color(0xFF4A1059))
+                  : null,
             ),
           ),
-        )
-      ],
+        ],
+      ),
     );
   }
 }
