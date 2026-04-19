@@ -5,7 +5,6 @@ import '../../../models/services_model.dart';
 import '../../../core/services/doctor_api.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/booking_api.dart';
-import '../../../models/booking_model.dart';
 import '../../../features/booking/booking_success_page.dart';
 
 const _purple = Color(0xFF4A3298);

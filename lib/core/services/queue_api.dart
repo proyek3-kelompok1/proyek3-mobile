@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../constants/api_constants.dart';
-import '../../models/booking_model.dart';
 
 class QueueApi {
   /// Fetch queue list for a given date and optional service type filter

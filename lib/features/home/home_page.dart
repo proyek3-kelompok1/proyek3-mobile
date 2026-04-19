@@ -6,7 +6,6 @@ import 'package:dvpets/features/education/page/education_list_page.dart';
 import 'package:dvpets/features/education/page/education_detail_page.dart';
 import 'package:dvpets/features/education/services/education_services.dart';
 import 'package:dvpets/models/education_model.dart';
-import 'package:dvpets/core/constants/api_constants.dart';
 import 'package:dvpets/features/home/page/booking_page.dart';
 import 'package:dvpets/features/consultation/doctor_list_page.dart';
 import 'package:dvpets/core/services/booking_history_api.dart';
