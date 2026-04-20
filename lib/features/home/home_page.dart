@@ -10,6 +10,7 @@ import 'package:dvpets/features/home/page/booking_page.dart';
 import 'package:dvpets/features/consultation/doctor_list_page.dart';
 import 'package:dvpets/core/services/booking_history_api.dart';
 import 'package:dvpets/models/booking_model.dart';
+import 'package:dvpets/features/booking/medical_record_page.dart';
 import 'package:dvpets/features/booking/queue_list_page.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -615,7 +616,7 @@ class _BookingHistoryState extends State<BookingHistory> {
                   press: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const QueueListPage()),
+                      MaterialPageRoute(builder: (_) => QueueListPage()),
                     );
                   },
                 ),
@@ -661,7 +662,7 @@ class _BookingHistoryState extends State<BookingHistory> {
                 press: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const QueueListPage()),
+                    MaterialPageRoute(builder: (_) => QueueListPage()),
                   );
                 },
               ),
@@ -914,6 +915,39 @@ class _BookingCard extends StatelessWidget {
                     style: GoogleFonts.poppins(fontSize: 10, color: _grey600Home),
                   ),
                 ],
+              ),
+            ],
+
+            // Medical Record Button
+            if (booking.hasMedicalRecord) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // Navigate to Medical Record Details
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MedicalRecordPage(medicalRecords: booking.medicalRecords),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.description_outlined, size: 14),
+                  label: Text(
+                    "Lihat Rekam Medis",
+                    style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _purpleHome,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
               ),
             ],
           ],
