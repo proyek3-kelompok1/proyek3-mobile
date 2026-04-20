@@ -9,7 +9,7 @@ class AuthApi {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     serverClientId: '862174055865-g0cigimem29h8nfseqke0tc0skbocqnu.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
-  );
+  ); 
 
   // Sign In with Google
   Future<Map<String, dynamic>?> signInWithGoogle() async {
@@ -39,6 +39,122 @@ class AuthApi {
       print('CRITICAL Google Sign-In Error: $error');
       // Berikan error ke UI agar bisa ditampilkan di Snackbar
       throw error;
+    }
+  }
+
+  // Login with Email and Password
+  Future<Map<String, dynamic>?> login(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.login),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final String accessToken = data['access_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', accessToken);
+        await prefs.setString('user_data', jsonEncode(data['user']));
+
+        return data;
+      } else {
+        print('Login Gagal: ${response.body}');
+        // Kembalikan body agar UI bisa baca pesan error 'not_verified'
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      print('Login Error: $e');
+      return null;
+    }
+  }
+
+  // Verify OTP
+  Future<Map<String, dynamic>?> verifyOtp(String email, String otp) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.verifyOtp),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'otp': otp,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Verifikasi Gagal: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Verifikasi Error: $e');
+      return null;
+    }
+  }
+
+  // Resend OTP
+  Future<Map<String, dynamic>?> resendOtp(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.resendOtp),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Resend OTP Gagal: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Resend OTP Error: $e');
+      return null;
+    }
+  }
+
+  // Register with Email and Password
+  Future<Map<String, dynamic>?> register(String name, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.register),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Registrasi Gagal: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Registrasi Error: $e');
+      return null;
     }
   }
 
