@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/auth_api.dart';
-import '../../navbar_page.dart';
+// import '../../navbar_page.dart';
 import 'otp_verification_page.dart';
 
 class RegisterPage extends StatefulWidget {
