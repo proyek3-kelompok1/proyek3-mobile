@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/auth_api.dart';
-import '../../navbar_page.dart';
-import 'otp_verification_page.dart';
+
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -48,16 +47,11 @@ class _RegisterPageState extends State<RegisterPage> {
         if (result != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Registrasi Berhasil! Silakan cek email untuk kode OTP.'),
-              backgroundColor: Colors.blue,
+              content: Text('Registrasi Berhasil! Silakan login.'),
+              backgroundColor: Colors.green,
             ),
           );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OtpVerificationPage(email: _emailController.text),
-            ),
-          );
+          Navigator.pop(context); // Kembali ke halaman Login
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Registrasi gagal. Email mungkin sudah terdaftar.'), backgroundColor: Colors.red),
