@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/queue_api.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 
 const _purple = Color(0xFF4A3298);
 const _purpleDark = Color(0xFF2E1D6B);
@@ -922,26 +923,7 @@ class _QueueListPageState extends State<QueueListPage> with TickerProviderStateM
           ),
           // Table Body
           if (_loadingQueue)
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation(_purple),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Memuat data antrian...",
-                    style: GoogleFonts.poppins(fontSize: 11, color: _grey600),
-                  ),
-                ],
-              ),
-            )
+            const ShimmerList(itemCount: 5)
           else if (_queueList.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),

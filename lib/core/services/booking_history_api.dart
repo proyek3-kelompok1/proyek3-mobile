@@ -46,7 +46,8 @@ class BookingHistoryApi {
         final activeBookings = allBookings.where((b) {
           try {
             final bookingDate = DateTime.parse(b.bookingDate);
-            return !bookingDate.isBefore(today);
+            // Show if it's today/future OR if it has a medical record
+            return !bookingDate.isBefore(today) || b.hasMedicalRecord;
           } catch (_) {
             // If date parsing fails, still show it
             return true;

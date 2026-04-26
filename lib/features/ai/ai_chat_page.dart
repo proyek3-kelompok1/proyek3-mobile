@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/widgets/shimmer_loading.dart';
 
 // ──────────────────────────────────────────────────────────
 //  COLOUR PALETTE
@@ -217,7 +218,7 @@ class _AiChatPageState extends State<AiChatPage> with TickerProviderStateMixin {
         children: [
           Expanded(
             child: _isLoadingHistory 
-              ? const Center(child: CircularProgressIndicator(color: _purple))
+              ? const ShimmerList(itemCount: 8)
               : _messages.isEmpty 
                 ? _buildEmptyState()
                 : ListView.builder(

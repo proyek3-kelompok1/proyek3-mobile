@@ -6,6 +6,9 @@ import '../../../core/services/doctor_api.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/booking_api.dart';
 import '../../../features/booking/booking_success_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import '../../../core/widgets/shimmer_loading.dart';
 
 const _purple = Color(0xFF4A3298);
 const _purpleDark = Color(0xFF2E1D6B);
@@ -90,8 +93,21 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
         doctors = d;
         services = s;
         if (doctors.isNotEmpty) selectedDoctor = doctors.first;
-        loading = false;
       });
+
+      // Autofill User Data
+      final prefs = await SharedPreferences.getInstance();
+      final userDataStr = prefs.getString('user_data');
+      if (userDataStr != null) {
+        final userData = jsonDecode(userDataStr);
+        setState(() {
+          namaPemilik.text = userData['name'] ?? "";
+          email.text = userData['email'] ?? "";
+          telepon.text = userData['phone'] ?? "";
+        });
+      }
+
+      setState(() => loading = false);
     } catch (e) {
       debugPrint("ERROR LOAD: $e");
       setState(() => loading = false);
@@ -198,11 +214,12 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     if (loading) {
       return Scaffold(
         backgroundColor: _purpleBg,
-        body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SizedBox(width: 48, height: 48, child: CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation(_purple))),
-          const SizedBox(height: 16),
-          Text("Memuat data...", style: GoogleFonts.poppins(color: _purple, fontSize: 14)),
-        ])),
+        appBar: AppBar(
+          title: Text("Booking Layanan", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          backgroundColor: _purple,
+          elevation: 0,
+        ),
+        body: const ShimmerList(itemCount: 8),
       );
     }
     return Scaffold(

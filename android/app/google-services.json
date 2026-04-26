@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "461974623055",
+    "project_id": "dvpets-13179",
+    "storage_bucket": "dvpets-13179.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:461974623055:android:148b092ceee39c565fab3a",
+        "android_client_info": {
+          "package_name": "com.example.dvpets"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCXGzaB934FQcTWk0-Ege7ZzJZwsAqAYf8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/auth_api.dart';
+import '../../core/services/notification_service.dart';
 import '../auth/login_page.dart';
 import 'edit_profile_screen.dart';
+import '../../core/widgets/shimmer_loading.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -60,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading && _userData == null) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF4A1059)));
+      return const ShimmerList(itemCount: 5);
     }
 
     return SafeArea(
@@ -133,9 +135,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               ProfileMenu(
-                text: "Notifications",
-                icon: Icons.notifications_none,
-                press: () {},
+                text: "Test Notification",
+                icon: Icons.notifications_active_outlined,
+                press: () {
+                  NotificationService().showNotification(
+                    title: "Halo dari DVPets! 🐾",
+                    body: "Ini adalah notifikasi uji coba untuk memastikan sistem berjalan lancar.",
+                  );
+                },
               ),
               ProfileMenu(
                 text: "Settings",
