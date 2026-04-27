@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/doctor_model.dart';
 import '../../core/services/doctor_api.dart';
 import 'chat_page.dart';
+import '../../core/widgets/shimmer_loading.dart';
 
 // ──────────────────────────────────────────────────────────
 //  COLOUR PALETTE
@@ -44,29 +45,7 @@ class _DoctorListPageState extends State<DoctorListPage> {
               future: _future,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation(_purple),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          "Memuat data dokter...",
-                          style: GoogleFonts.poppins(
-                            color: _purple,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+                  return const ShimmerList(itemCount: 6);
                 }
 
                 if (snapshot.hasError) {

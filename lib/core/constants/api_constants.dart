@@ -1,9 +1,11 @@
 class ApiConstants {
-  static const String baseUrl = "http://192.168.1.6:8000/api";
+  static const String baseUrl = "http://10.0.170.158:8000/api";
   static const String education = "$baseUrl/education";
   static const String services = "$baseUrl/services";
   static const String booking = "$baseUrl/bookings";
   static const String bookingHistory = "$baseUrl/bookings";
+  static const String medicalRecords = "$baseUrl/medical-records";
+  static String medicalRecordPdf(int id) => "$baseUrl/medical-records/$id/pdf";
   static const String checkQueue = "$baseUrl/bookings/check-queue";
   static const String queueList = "$baseUrl/bookings/queue";
   static const String doctors = "$baseUrl/doctors";
@@ -17,5 +19,6 @@ class ApiConstants {
   static const String aiChat = "$baseUrl/ai/chat";
   static const String profile = "$baseUrl/user";
   static const String updateProfile = "$baseUrl/user/profile";
+  static const String updateFcmToken = "$baseUrl/user/fcm-token";
   static const String logout = "$baseUrl/logout";
 }

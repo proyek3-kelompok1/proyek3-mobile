@@ -12,6 +12,10 @@ import 'package:dvpets/core/services/booking_history_api.dart';
 import 'package:dvpets/models/booking_model.dart';
 import 'package:dvpets/features/booking/medical_record_page.dart';
 import 'package:dvpets/features/booking/queue_list_page.dart';
+import 'package:dvpets/features/booking/queue_list_page.dart';
+import 'package:dvpets/features/booking/medical_record_list_page.dart';
+import 'package:dvpets/core/services/notification_service.dart';
+import 'package:dvpets/core/widgets/shimmer_loading.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -227,34 +231,28 @@ class Categories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> categories = [
-      {"icon": bookingIcon, "text": "Booking", "page": const BookingPage()},
+    final List<Map<String, dynamic>> categories = [
+      {
+        "icon": bookingIcon,
+        "text": "Booking",
+        "page": const BookingPage(),
+      },
       {
         "icon": consultationIcon,
-        "text": "Consultation",
+        "text": "Konsultasi",
         "page": const DoctorListPage(),
       },
       {
-        "icon": vaccineIcon,
-        "text": "Vaccine",
-        // "page": const VaccinePage(),
-      },
-      {
-        "icon": groomingIcon,
-        "text": "Grooming",
-        // "page": const GroomingPage(),
-      },
-      {
-        "icon": petShopIcon,
-        "text": "Pet Shop",
-        // "page": const PetShopPage(),
+        "icon": rekamMedisIcon,
+        "text": "Rekam Medis",
+        "page": const MedicalRecordListPage(),
       },
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: List.generate(
           categories.length,
@@ -334,7 +332,21 @@ class _SpecialOffersState extends State<SpecialOffers> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Padding(
+            padding: EdgeInsets.only(left: 20),
+            child: ShimmerLoading(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ShimmerBox(width: 242, height: 180, borderRadius: 20),
+                    SizedBox(width: 20),
+                    ShimmerBox(width: 242, height: 180, borderRadius: 20),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
 
         if (snapshot.hasError) {
@@ -566,38 +578,60 @@ class _BookingHistoryState extends State<BookingHistory> {
     }
   }
 
+  void _scheduleReminders(List<BookingModel> bookings) {
+    for (var b in bookings) {
+      if (b.status == 'cancelled' || b.status == 'completed') continue;
+      try {
+        final bookingDateTime = DateTime.parse("${b.bookingDate} ${b.bookingTime}");
+        final reminderTime = bookingDateTime.subtract(const Duration(minutes: 30));
+
+        if (reminderTime.isAfter(DateTime.now())) {
+          NotificationService().scheduleNotification(
+            id: b.bookingCode.hashCode,
+            title: "Pengingat Booking 🐾",
+            body: "Halo! Booking ${b.serviceName} untuk ${b.namaHewan} akan dimulai dalam 30 menit. Jangan lupa ya!",
+            scheduledDate: reminderTime,
+          );
+        }
+      } catch (e) {
+        debugPrint("Error scheduling reminder for ${b.bookingCode}: $e");
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<BookingModel>>(
       future: _future,
       builder: (context, snapshot) {
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          _scheduleReminders(snapshot.data!);
+        }
         // Don't show section at all if loading or error or empty
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Riwayat Booking",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
+                Text(
+                  "Riwayat Booking",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                const Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation(_purpleHome),
+                const ShimmerLoading(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ShimmerBox(width: 280, height: 160, borderRadius: 18),
+                        SizedBox(width: 20),
+                        ShimmerBox(width: 280, height: 160, borderRadius: 18),
+                      ],
                     ),
                   ),
                 ),
@@ -1028,6 +1062,14 @@ const groomingIcon = '''
 <circle cx="6" cy="6" r="3" stroke="#FF7643" stroke-width="2"/>
 <circle cx="18" cy="6" r="3" stroke="#FF7643" stroke-width="2"/>
 <path d="M8 8L16 16M16 8L8 16" stroke="#FF7643" stroke-width="2"/>
+</svg>
+''';
+
+const rekamMedisIcon = '''
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5"
+stroke="#FF7643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9 12H15M9 16H12" stroke="#FF7643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 ''';
 

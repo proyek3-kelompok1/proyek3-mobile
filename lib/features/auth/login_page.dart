@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/auth_api.dart';
 import '../../navbar_page.dart';
 import 'register_page.dart';
-import 'otp_verification_page.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -73,17 +73,6 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const NavBarPage()),
-          );
-        } else if (result != null && result['not_verified'] == true) {
-          // Jika belum verifikasi, lempar ke halaman OTP
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'Email belum diverifikasi')),
-          );
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OtpVerificationPage(email: _emailController.text),
-            ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

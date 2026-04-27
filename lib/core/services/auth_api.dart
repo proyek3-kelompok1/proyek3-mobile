@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
+import 'notification_service.dart';
 
 class AuthApi {
   // Masukkan Web Client ID di sini agar bisa digunakan untuk verifikasi di Backend
@@ -60,10 +61,12 @@ class AuthApi {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final String accessToken = data['access_token'];
-        
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', accessToken);
         await prefs.setString('user_data', jsonEncode(data['user']));
+        await prefs.setString('auth_token', accessToken);
+
+        // Sync FCM Token
+        await syncFcmToken();
 
         return data;
       } else {
@@ -177,11 +180,12 @@ class AuthApi {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final String accessToken = data['access_token'];
-        
-        // Simpan token ke lokal
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', accessToken);
         await prefs.setString('user_data', jsonEncode(data['user']));
+        await prefs.setString('auth_token', accessToken);
+
+        // Sync FCM Token
+        await syncFcmToken();
 
         print('Login Berhasil! Token disimpan.');
         return data;
@@ -284,9 +288,33 @@ class AuthApi {
     }
   }
 
-  // Cek apakah sudah login
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_token') != null;
+  }
+
+  // Method to sync FCM Token to Backend
+  Future<void> syncFcmToken() async {
+    try {
+      final fcmToken = await NotificationService().getFCMToken();
+      if (fcmToken == null) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final authToken = prefs.getString('auth_token');
+      if (authToken == null) return;
+
+      print('🔄 Syncing FCM Token: $fcmToken');
+      await http.post(
+        Uri.parse(ApiConstants.updateFcmToken),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({'fcm_token': fcmToken}),
+      );
+    } catch (e) {
+      print('❌ Sync FCM Token Error: $e');
+    }
   }
 }

@@ -1,4 +1,5 @@
 class MedicalRecordModel {
+  final int? id;
   final String kodeRekamMedis;
   final String namaHewan;
   final String jenisHewan;
@@ -12,6 +13,7 @@ class MedicalRecordModel {
   final String status;
 
   MedicalRecordModel({
+    this.id,
     required this.kodeRekamMedis,
     required this.namaHewan,
     required this.jenisHewan,
@@ -27,6 +29,7 @@ class MedicalRecordModel {
 
   factory MedicalRecordModel.fromJson(Map<String, dynamic> json) {
     return MedicalRecordModel(
+      id: json['id'],
       kodeRekamMedis: json['kode_rekam_medis'] ?? '',
       namaHewan: json['nama_hewan'] ?? '',
       jenisHewan: json['jenis_hewan'] ?? '',
