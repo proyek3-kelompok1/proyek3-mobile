@@ -64,6 +64,8 @@ class AuthApi {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_data', jsonEncode(data['user']));
         await prefs.setString('auth_token', accessToken);
+        await prefs.setString('user_role', data['user']['role'] ?? 'user');
+        await prefs.setString('user_name', data['user']['name'] ?? 'User');
 
         // Sync FCM Token
         await syncFcmToken();
@@ -183,6 +185,8 @@ class AuthApi {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_data', jsonEncode(data['user']));
         await prefs.setString('auth_token', accessToken);
+        await prefs.setString('user_role', data['user']['role'] ?? 'user');
+        await prefs.setString('user_name', data['user']['name'] ?? 'User');
 
         // Sync FCM Token
         await syncFcmToken();
@@ -218,6 +222,8 @@ class AuthApi {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         await prefs.setString('user_data', jsonEncode(data));
+        await prefs.setString('user_role', data['role'] ?? 'user');
+        await prefs.setString('user_name', data['name'] ?? 'User');
         return data;
       }
       return null;

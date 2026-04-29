@@ -5,6 +5,8 @@ class Education {
   final String type;
   final String content;
   final String thumbnailUrl;
+  final String? videoUrl;
+  final String? duration;
   final String? level;
   final String? description;
   final String? readingTime;
@@ -18,6 +20,8 @@ class Education {
     required this.type,
     required this.content,
     required this.thumbnailUrl,
+    this.videoUrl,
+    this.duration,
     this.level,
     this.description,
     this.readingTime,
@@ -33,6 +37,8 @@ class Education {
       type: json['type'],
       content: json['content'],
       thumbnailUrl: json['thumbnail_url'],
+      videoUrl: json['video_url'],
+      duration: json['duration'],
       level: json['level'],
       readingTime: json['reading_time'],
       view: json['view'],

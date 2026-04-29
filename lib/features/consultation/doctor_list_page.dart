@@ -278,74 +278,14 @@ class _DoctorListPageState extends State<DoctorListPage> {
                 const SizedBox(height: 20),
 
                 Text(
-                  "Masukkan data Anda untuk memulai konsultasi",
+                  "Apakah Anda ingin memulai sesi konsultasi baru dengan ${doctor.name}?",
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    fontSize: 13,
+                    fontSize: 14,
                     color: _grey600,
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // Name field
-                TextFormField(
-                  controller: nameController,
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? "Nama wajib diisi" : null,
-                  style: GoogleFonts.poppins(fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: "Nama Anda",
-                    labelStyle: GoogleFonts.poppins(fontSize: 13),
-                    prefixIcon: const Icon(Icons.person_outline_rounded,
-                        color: _purpleLight, size: 20),
-                    filled: true,
-                    fillColor: _purpleBg.withOpacity(0.4),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: _grey300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: _grey300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide:
-                          const BorderSide(color: _purple, width: 1.5),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Phone field
-                TextFormField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? "Telepon wajib diisi" : null,
-                  style: GoogleFonts.poppins(fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: "No. Telepon",
-                    labelStyle: GoogleFonts.poppins(fontSize: 13),
-                    prefixIcon: const Icon(Icons.phone_outlined,
-                        color: _purpleLight, size: 20),
-                    filled: true,
-                    fillColor: _purpleBg.withOpacity(0.4),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: _grey300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: _grey300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide:
-                          const BorderSide(color: _purple, width: 1.5),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 // Start chat button
                 SizedBox(
@@ -359,8 +299,7 @@ class _DoctorListPageState extends State<DoctorListPage> {
                           MaterialPageRoute(
                             builder: (_) => ChatPage(
                               doctor: doctor,
-                              userName: nameController.text.trim(),
-                              userPhone: phoneController.text.trim(),
+                              isDoctor: false,
                             ),
                           ),
                         );

@@ -16,12 +16,18 @@ import 'package:dvpets/features/booking/queue_list_page.dart';
 import 'package:dvpets/features/booking/medical_record_list_page.dart';
 import 'package:dvpets/core/services/notification_service.dart';
 import 'package:dvpets/core/widgets/shimmer_loading.dart';
+import 'package:dvpets/features/notification/notification_list_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:dvpets/models/consultation_model.dart';
+import 'package:dvpets/core/services/consultation_api.dart';
+import 'package:dvpets/features/consultation/chat_page.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(vertical: 16),
@@ -34,6 +40,8 @@ class HomeScreen extends StatelessWidget {
               SizedBox(height: 20),
               BookingHistory(),
               SizedBox(height: 20),
+              ActiveConsultations(),
+              SizedBox(height: 20),
             ],
           ),
         ),
@@ -42,8 +50,32 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends StatefulWidget {
   const HomeHeader({Key? key}) : super(key: key);
+
+  @override
+  State<HomeHeader> createState() => _HomeHeaderState();
+}
+
+class _HomeHeaderState extends State<HomeHeader> {
+  String _userName = "User";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userDataString = prefs.getString('user_data');
+    if (userDataString != null) {
+      final userData = jsonDecode(userDataString);
+      setState(() {
+        _userName = userData['name'] ?? "User";
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,15 +84,45 @@ class HomeHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Expanded(child: SearchField()),
-          const SizedBox(width: 16),
-          IconBtnWithCounter(
-            // numOfitem: 3,
-            svgSrc: aiIcon,
-            press: () {},
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Halo, $_userName! 🐾",
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF4A1059),
+                  ),
+                ),
+                Text(
+                  "Semoga harimu menyenangkan",
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(width: 8),
-          IconBtnWithCounter(svgSrc: bellIcon, numOfitem: 3, press: () {}),
+          ValueListenableBuilder<List<AppNotification>>(
+            valueListenable: NotificationService().notificationsNotifier,
+            builder: (context, notifications, child) {
+              final unreadCount = notifications.where((n) => !n.isRead).length;
+              return IconBtnWithCounter(
+                svgSrc: bellIcon,
+                numOfitem: unreadCount,
+                press: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificationListPage()),
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -234,7 +296,7 @@ class Categories extends StatelessWidget {
     final List<Map<String, dynamic>> categories = [
       {
         "icon": bookingIcon,
-        "text": "Booking",
+        "text": "Antrian",
         "page": const BookingPage(),
       },
       {
@@ -360,7 +422,7 @@ class _SpecialOffersState extends State<SpecialOffers> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SectionTitle(
-                title: "Education",
+                title: "Edukasi",
                 press: () {
                   Navigator.push(
                     context,
@@ -382,6 +444,7 @@ class _SpecialOffersState extends State<SpecialOffers> {
                       image: edu.thumbnailUrl,
                       category: edu.title,
                       viewCount: edu.view,
+                      type: edu.type,
                       press: () {
                         Navigator.push(
                           context,
@@ -409,10 +472,12 @@ class SpecialOfferCard extends StatelessWidget {
     required this.category,
     required this.image,
     required this.viewCount,
+    this.type,
     required this.press,
   }) : super(key: key);
 
   final String category, image;
+  final String? type;
   final int viewCount;
   final GestureTapCallback press;
 
@@ -442,6 +507,7 @@ class SpecialOfferCard extends StatelessWidget {
                     );
                   },
                 ),
+                // Gradient shadow to make text readable
                 Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -456,7 +522,22 @@ class SpecialOfferCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Padding(
+                if (type == 'video')
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 15,
                     vertical: 10,
@@ -615,7 +696,7 @@ class _BookingHistoryState extends State<BookingHistory> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Riwayat Booking",
+                  "Riwayat Antrian",
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1081,3 +1162,193 @@ const petShopIcon = '''
 <path d="M8 16C8 14 10 13 12 13C14 13 16 14 16 16C16 18 14 19 12 19C10 19 8 18 8 16Z" fill="#FF7643"/>
 </svg>
 ''';
+
+class ActiveConsultations extends StatefulWidget {
+  const ActiveConsultations({super.key});
+
+  @override
+  State<ActiveConsultations> createState() => _ActiveConsultationsState();
+}
+
+class _ActiveConsultationsState extends State<ActiveConsultations> {
+  late Future<List<ConsultationModel>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = ConsultationApi.fetchSessions();
+  }
+
+  String _formatTime(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+    } catch (_) {
+      return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const purple = Color(0xFF4A3298);
+    const purpleBg = Color(0xFFF3EEFF);
+
+    return FutureBuilder<List<ConsultationModel>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        
+        final sessions = snapshot.data ?? [];
+        if (sessions.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SectionTitle(
+                title: "Konsultasi Aktif",
+                press: () {
+                   Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DoctorListPage()),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              ...sessions.map((session) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatPage(
+                            session: session,
+                            isDoctor: false,
+                          ),
+                        ),
+                      ).then((_) => setState(() {
+                        _future = ConsultationApi.fetchSessions();
+                      }));
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 28,
+                                backgroundColor: purple.withOpacity(0.1),
+                                backgroundImage: session.userAvatar != null ? NetworkImage(session.userAvatar!) : null,
+                                child: session.userAvatar == null ? const Icon(Icons.person, color: purple) : null,
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: session.isOnline ? Colors.green : Colors.grey,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Dr. ${session.userName}",
+                                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15),
+                                    ),
+                                    if (session.updatedAt != null)
+                                      Text(
+                                        _formatTime(session.updatedAt!),
+                                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (session.lastMessage != null) ...[
+                                      _buildStatusTicks(session.lastMessageStatus),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Expanded(
+                                      child: Text(
+                                        session.lastMessage ?? "Mulai chat sekarang",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12, 
+                                          color: session.unreadCount > 0 ? Colors.black87 : Colors.grey[600],
+                                          fontWeight: session.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                    if (session.unreadCount > 0)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: purple,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          session.unreadCount.toString(),
+                                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              )).toList(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusTicks(String? status) {
+    if (status == 'read') {
+      return const Icon(Icons.done_all, color: Colors.blue, size: 14);
+    } else if (status == 'sent') {
+      return const Icon(Icons.done, color: Colors.grey, size: 14);
+    }
+    return const SizedBox.shrink();
+  }
+}

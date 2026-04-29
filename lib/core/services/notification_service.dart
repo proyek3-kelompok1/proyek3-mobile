@@ -3,7 +3,24 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:flutter/material.dart';
 import 'dart:io';
+
+class AppNotification {
+  final String id;
+  final String title;
+  final String body;
+  final DateTime timestamp;
+  bool isRead;
+
+  AppNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.timestamp,
+    this.isRead = false,
+  });
+}
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -12,6 +29,10 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  
+  final ValueNotifier<List<AppNotification>> notificationsNotifier = ValueNotifier([]);
+  
+  int get unreadCount => notificationsNotifier.value.where((n) => !n.isRead).length;
 
   Future<void> init() async {
     // 1. Initialize Timezone
@@ -50,6 +71,36 @@ class NotificationService {
     if (Platform.isIOS) {
       await _fcm.requestPermission();
     }
+
+    // 4. Handle Foreground Messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("Got a message in foreground: ${message.messageId}");
+      if (message.notification != null) {
+        showNotification(
+          title: message.notification!.title ?? 'Notification',
+          body: message.notification!.body ?? '',
+        );
+      }
+    });
+
+    // 5. Handle Notification Click when app is in background/terminated
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("Notification clicked! ${message.data}");
+    });
+
+    // 6. Subscribe to Topics
+    subscribeToTopic('education');
+    subscribeToTopic('all_users');
+  }
+
+  Future<void> subscribeToTopic(String topic) async {
+    await _fcm.subscribeToTopic(topic);
+    print("Subscribed to topic: $topic");
+  }
+
+  Future<void> unsubscribeFromTopic(String topic) async {
+    await _fcm.unsubscribeFromTopic(topic);
+    print("Unsubscribed from topic: $topic");
   }
 
   // Show immediate notification (Local)
@@ -58,21 +109,60 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'dvpets_channel',
       'DV Pets Notifications',
       importance: Importance.max,
       priority: Priority.high,
+      color: const Color(0xFF7C3AED), // Warna Ungu DV Pets
+      styleInformation: BigTextStyleInformation(
+        body,
+        contentTitle: title,
+        summaryText: 'Notifikasi DV Pets',
+      ),
+      playSound: true,
+      enableVibration: true,
+      ledColor: const Color(0xFF7C3AED),
+      ledOnMs: 1000,
+      ledOffMs: 500,
     );
     
-    const iosDetails = DarwinNotificationDetails();
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
     
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
     await _localNotifications.show(id, title, body, details);
+
+    // Add to internal list
+    final newNotif = AppNotification(
+      id: id.toString() + DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      body: body,
+      timestamp: DateTime.now(),
+    );
+    
+    final currentList = List<AppNotification>.from(notificationsNotifier.value);
+    currentList.insert(0, newNotif);
+    notificationsNotifier.value = currentList;
+  }
+
+  void markAllAsRead() {
+    final currentList = List<AppNotification>.from(notificationsNotifier.value);
+    for (var n in currentList) {
+      n.isRead = true;
+    }
+    notificationsNotifier.value = currentList;
+  }
+
+  void clearNotifications() {
+    notificationsNotifier.value = [];
   }
 
   // Schedule notification (e.g. for booking)

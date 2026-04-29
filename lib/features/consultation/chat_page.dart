@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../models/consultation_model.dart';
 import '../../models/doctor_model.dart';
 import '../../models/message_model.dart';
 import '../../core/services/consultation_api.dart';
@@ -18,15 +19,15 @@ const _grey300 = Color(0xFFE0E0E0);
 const _grey600 = Color(0xFF757575);
 
 class ChatPage extends StatefulWidget {
-  final DoctorModel doctor;
-  final String userName;
-  final String userPhone;
+  final ConsultationModel? session;
+  final DoctorModel? doctor;
+  final bool isDoctor;
 
   const ChatPage({
     super.key,
-    required this.doctor,
-    required this.userName,
-    required this.userPhone,
+    this.session,
+    this.doctor,
+    this.isDoctor = false,
   });
 
   @override
@@ -60,14 +61,19 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _initConsultation() async {
     try {
-      final consultation = await ConsultationApi.createConsultation(
-        doctorId: widget.doctor.id,
-        userName: widget.userName,
-        userPhone: widget.userPhone,
-      );
-      _consultationId = consultation.id;
-      await _loadMessages();
-      _startPolling();
+      if (widget.session != null) {
+        _consultationId = widget.session!.id;
+      } else if (widget.doctor != null) {
+        final consultation = await ConsultationApi.createConsultation(
+          doctorId: widget.doctor!.id,
+        );
+        _consultationId = consultation.id;
+      }
+      
+      if (_consultationId != null) {
+        await _loadMessages();
+        _startPolling();
+      }
       setState(() => _loading = false);
     } catch (e) {
       setState(() {
@@ -78,7 +84,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _startPolling() {
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       _loadMessages();
     });
   }
@@ -86,16 +92,14 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _loadMessages() async {
     if (_consultationId == null) return;
     try {
-      final msgs =
-          await ConsultationApi.fetchMessages(_consultationId!);
+      final msgs = await ConsultationApi.fetchMessages(_consultationId!);
       if (mounted) {
-        setState(() => _messages
-          ..clear()
-          ..addAll(msgs));
+        setState(() {
+          _messages.clear();
+          _messages.addAll(msgs);
+        });
       }
-    } catch (_) {
-      // Silent fail on polling
-    }
+    } catch (_) {}
   }
 
   Future<void> _sendMessage() async {
@@ -108,7 +112,7 @@ class _ChatPageState extends State<ChatPage> {
     // Optimistic add
     final tempMsg = MessageModel(
       id: -1,
-      senderType: 'user',
+      senderType: widget.isDoctor ? 'doctor' : 'user',
       message: text,
       createdAt: DateTime.now().toIso8601String(),
     );
@@ -118,20 +122,13 @@ class _ChatPageState extends State<ChatPage> {
     try {
       await ConsultationApi.sendMessage(
         consultationId: _consultationId!,
-        senderType: 'user',
         message: text,
       );
       await _loadMessages();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Gagal mengirim: $e"),
-            backgroundColor: Colors.red.shade400,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+          SnackBar(content: Text("Gagal mengirim: $e")),
         );
       }
     } finally {
@@ -189,6 +186,16 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildHeader() {
+    final title = widget.isDoctor 
+        ? (widget.session?.userName ?? "Pasien")
+        : (widget.session?.doctorName != null ? "Dr. ${widget.session!.doctorName}" : (widget.doctor?.name != null ? "Dr. ${widget.doctor!.name}" : "Dr. ${widget.session?.userName ?? 'Dokter'}"));
+    
+    final subTitle = widget.session?.isOnline == true ? "Online" : "Offline";
+    
+    final avatarUrl = widget.isDoctor 
+        ? widget.session?.userAvatar 
+        : (widget.session?.userAvatar ?? widget.doctor?.photoUrl); // Using userAvatar here as fallback but usually it's doctor photo
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
@@ -223,16 +230,29 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ),
           const SizedBox(width: 12),
-          // Doctor photo
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: _white.withOpacity(0.2),
-            backgroundImage: widget.doctor.photoUrl != null
-                ? NetworkImage(widget.doctor.photoUrl!)
-                : null,
-            child: widget.doctor.photoUrl == null
-                ? const Icon(Icons.person_rounded, color: _white, size: 20)
-                : null,
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: _white.withOpacity(0.2),
+                backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                child: avatarUrl == null ? const Icon(Icons.person_rounded, color: _white, size: 20) : null,
+              ),
+              if (widget.session?.isOnline == true)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _white, width: 2),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -240,7 +260,7 @@ class _ChatPageState extends State<ChatPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.doctor.name,
+                  title,
                   style: GoogleFonts.poppins(
                     color: _white,
                     fontSize: 16,
@@ -248,10 +268,11 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
                 Text(
-                  widget.doctor.specialization,
+                  subTitle,
                   style: GoogleFonts.poppins(
-                    color: _white.withOpacity(0.7),
+                    color: subTitle == "Online" ? Colors.greenAccent : _white.withOpacity(0.7),
                     fontSize: 11,
+                    fontWeight: subTitle == "Online" ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
               ],
@@ -319,7 +340,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Ketik pesan untuk memulai konsultasi\ndengan ${widget.doctor.name}",
+              "Ketik pesan untuk memulai konsultasi\ndengan ${widget.doctor?.name ?? widget.session?.doctorName ?? "Dokter"}",
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
@@ -376,22 +397,28 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildBubble(MessageModel msg) {
-    final isUser = msg.senderType == 'user';
+    final myRole = widget.isDoctor ? 'doctor' : 'user';
+    final isMe = msg.senderType == myRole;
+    
+    final otherAvatarUrl = widget.isDoctor 
+        ? widget.session?.userAvatar 
+        : (widget.session?.userAvatar ?? widget.doctor?.photoUrl);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          if (!isUser) ...[
+          if (!isMe) ...[
             CircleAvatar(
               radius: 16,
               backgroundColor: _purpleBg,
-              backgroundImage: widget.doctor.photoUrl != null
-                  ? NetworkImage(widget.doctor.photoUrl!)
+              backgroundImage: otherAvatarUrl != null
+                  ? NetworkImage(otherAvatarUrl)
                   : null,
-              child: widget.doctor.photoUrl == null
+              child: otherAvatarUrl == null
                   ? const Icon(Icons.person_rounded,
                       color: _purple, size: 16)
                   : null,
@@ -403,17 +430,17 @@ class _ChatPageState extends State<ChatPage> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isUser ? _purple : _white,
+                color: isMe ? _purple : _white,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(isUser ? 18 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 18),
+                  bottomLeft: Radius.circular(isMe ? 18 : 4),
+                  bottomRight: Radius.circular(isMe ? 4 : 18),
                 ),
                 boxShadow: [
                   BoxShadow(
                     color:
-                        (isUser ? _purple : Colors.black).withOpacity(0.08),
+                        (isMe ? _purple : Colors.black).withOpacity(0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -425,28 +452,41 @@ class _ChatPageState extends State<ChatPage> {
                   Text(
                     msg.message,
                     style: GoogleFonts.poppins(
-                      color: isUser ? _white : _purpleDark,
+                      color: isMe ? _white : _purpleDark,
                       fontSize: 13.5,
                       height: 1.5,
                     ),
                   ),
                   if (msg.createdAt != null) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      _formatTime(msg.createdAt!),
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        color: isUser
-                            ? _white.withOpacity(0.6)
-                            : _grey600.withOpacity(0.6),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _formatTime(msg.createdAt!),
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            color: isMe
+                                ? _white.withOpacity(0.6)
+                                : _grey600.withOpacity(0.6),
+                          ),
+                        ),
+                        if (isMe) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            msg.isRead ? Icons.done_all : Icons.done,
+                            size: 14,
+                            color: msg.isRead ? Colors.blueAccent : _white.withOpacity(0.6),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ],
               ),
             ),
           ),
-          if (isUser) const SizedBox(width: 8),
+          if (isMe) const SizedBox(width: 8),
         ],
       ),
     );
@@ -454,7 +494,7 @@ class _ChatPageState extends State<ChatPage> {
 
   String _formatTime(String dateStr) {
     try {
-      final dt = DateTime.parse(dateStr);
+      final dt = DateTime.parse(dateStr).toLocal();
       return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
     } catch (_) {
       return '';

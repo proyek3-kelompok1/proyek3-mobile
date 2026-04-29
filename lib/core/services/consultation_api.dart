@@ -1,26 +1,27 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/consultation_model.dart';
 import '../../models/message_model.dart';
 import '../constants/api_constants.dart';
 
 class ConsultationApi {
-  /// Create a new consultation session
+  /// Create or get a consultation session
   static Future<ConsultationModel> createConsultation({
     required int doctorId,
-    required String userName,
-    required String userPhone,
   }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
     final response = await http.post(
       Uri.parse(ApiConstants.consultations),
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
       body: jsonEncode({
         "doctor_id": doctorId,
-        "user_name": userName,
-        "user_phone": userPhone,
       }),
     );
 
@@ -32,45 +33,66 @@ class ConsultationApi {
     }
   }
 
-  /// Fetch messages for a consultation
-  static Future<List<MessageModel>> fetchMessages(int consultationId) async {
+  /// List all consultation sessions (for doctor or user)
+  static Future<List<ConsultationModel>> fetchSessions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
     final response = await http.get(
-      Uri.parse("${ApiConstants.consultations}/$consultationId/messages"),
-      headers: {"Accept": "application/json"},
+      Uri.parse(ApiConstants.consultations),
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
     );
 
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
+      final List data = jsonData['data'] ?? [];
+      return data.map((e) => ConsultationModel.fromJson(e)).toList();
+    } else {
+      throw Exception("Gagal memuat daftar konsultasi");
+    }
+  }
 
-      List data;
-      if (jsonData is List) {
-        data = jsonData;
-      } else if (jsonData is Map && jsonData['data'] is List) {
-        data = jsonData['data'];
-      } else {
-        throw Exception("Invalid messages format");
-      }
+  /// Fetch messages for a consultation
+  static Future<List<MessageModel>> fetchMessages(int consultationId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
 
+    final response = await http.get(
+      Uri.parse("${ApiConstants.consultations}/$consultationId/messages"),
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final List data = jsonData['data'] ?? [];
       return data.map((e) => MessageModel.fromJson(e)).toList();
     } else {
-      throw Exception("Gagal memuat pesan: ${response.body}");
+      throw Exception("Gagal memuat pesan");
     }
   }
 
   /// Send a new message
   static Future<MessageModel> sendMessage({
     required int consultationId,
-    required String senderType,
     required String message,
   }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
     final response = await http.post(
       Uri.parse("${ApiConstants.consultations}/$consultationId/messages"),
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
       body: jsonEncode({
-        "sender_type": senderType,
         "message": message,
       }),
     );
@@ -79,7 +101,7 @@ class ConsultationApi {
       final data = json.decode(response.body);
       return MessageModel.fromJson(data['data'] ?? data);
     } else {
-      throw Exception("Gagal mengirim pesan: ${response.body}");
+      throw Exception("Gagal mengirim pesan");
     }
   }
 }
