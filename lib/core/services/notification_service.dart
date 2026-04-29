@@ -16,8 +16,19 @@ class NotificationService {
   Future<void> init() async {
     // 1. Initialize Timezone
     tz.initializeTimeZones();
-    final String timeZoneName = (await FlutterTimezone.getLocalTimezone()).toString();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    try {
+      final tzInfo = await FlutterTimezone.getLocalTimezone();
+      String timeZoneName = tzInfo.toString();
+      // Beberapa device return "TimezoneInfo(Asia/Jakarta, ...)" bukan "Asia/Jakarta"
+      if (timeZoneName.contains('/') && timeZoneName.contains('(')) {
+        final match = RegExp(r'([\w]+/[\w]+)').firstMatch(timeZoneName);
+        timeZoneName = match?.group(1) ?? 'Asia/Jakarta';
+      }
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (e) {
+      // Fallback ke Asia/Jakarta jika gagal
+      tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
+    }
 
     // 2. Local Notifications Setup
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');

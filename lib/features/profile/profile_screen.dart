@@ -6,6 +6,7 @@ import '../../core/services/auth_api.dart';
 import '../../core/services/notification_service.dart';
 import '../auth/login_page.dart';
 import 'edit_profile_screen.dart';
+import 'help_center/help_center_screen.dart';
 import '../../core/widgets/shimmer_loading.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -152,7 +153,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ProfileMenu(
                 text: "Help Center",
                 icon: Icons.help_outline,
-                press: () {},
+                press: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HelpCenterScreen(),
+                    ),
+                  );
+                },
               ),
               ProfileMenu(
                 text: "Log Out",
