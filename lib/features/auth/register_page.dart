@@ -188,11 +188,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   // Register Button
                   _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF4A1059)))
                       : ElevatedButton(
                           onPressed: _handleRegister,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6C63FF),
+                            backgroundColor: const Color(0xFF4A1059),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),

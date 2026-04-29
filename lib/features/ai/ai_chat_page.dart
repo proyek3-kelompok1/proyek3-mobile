@@ -11,8 +11,8 @@ import '../../core/widgets/shimmer_loading.dart';
 // ──────────────────────────────────────────────────────────
 //  PALETTE
 // ──────────────────────────────────────────────────────────
-const _purple      = Color(0xFF4A3298);
-const _purpleDark  = Color(0xFF2E1D6B);
+const _purple      = Color(0xFF4A1059);
+const _purpleDark  = Color(0xFF4A1059);
 const _purpleLight = Color(0xFF7C5CBF);
 const _purpleAccent= Color(0xFFB39DDB);
 const _purpleBg    = Color(0xFFF3EEFF);
@@ -467,7 +467,7 @@ class _AiChatPageState extends State<AiChatPage> with TickerProviderStateMixin {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF2E1D6B), Color(0xFF4A3298)],
+            colors: [Color(0xFF4A1059), Color(0xFF4A1059)],
           ),
           borderRadius: BorderRadius.only(
             bottomLeft: Radius.circular(30),

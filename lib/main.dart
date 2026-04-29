@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        primaryColor: const Color(0xFF6C63FF),
+        primaryColor: const Color(0xFF4A1059),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: isLoggedIn ? const NavBarPage() : const LoginPage(),

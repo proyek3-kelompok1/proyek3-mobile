@@ -6,8 +6,8 @@ import '../../../models/education_model.dart';
 // ──────────────────────────────────────────────────────────
 //  COLOUR PALETTE  (purple + white dominant)
 // ──────────────────────────────────────────────────────────
-const _purple = Color(0xFF4A3298);
-const _purpleDark = Color(0xFF2E1D6B);
+const _purple = Color(0xFF4A1059);
+const _purpleDark = Color(0xFF4A1059);
 const _purpleLight = Color(0xFF7C5CBF);
 const _purpleAccent = Color(0xFFB39DDB);
 const _purpleBg = Color(0xFFF3EEFF);

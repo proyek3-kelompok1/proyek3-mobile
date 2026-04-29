@@ -22,6 +22,7 @@ import 'dart:convert';
 import 'package:dvpets/models/consultation_model.dart';
 import 'package:dvpets/core/services/consultation_api.dart';
 import 'package:dvpets/features/consultation/chat_page.dart';
+import 'package:dvpets/features/ai/ai_chat_page.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -309,6 +310,11 @@ class Categories extends StatelessWidget {
         "text": "Rekam Medis",
         "page": const MedicalRecordListPage(),
       },
+      {
+        "icon": aiIcon,
+        "text": "DokterPaw",
+        "page": const AiChatPage(),
+      },
     ];
 
     return Padding(
@@ -317,6 +323,7 @@ class Categories extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: List.generate(
+
           categories.length,
           (index) => CategoryCard(
             icon: categories[index]["icon"],
@@ -502,7 +509,7 @@ class SpecialOfferCard extends StatelessWidget {
                     return Container(
                       color: const Color(0xFFF3EEFF),
                       child: const Center(
-                        child: Icon(Icons.broken_image, color: Color(0xFF4A3298), size: 40),
+                        child: Icon(Icons.broken_image, color: Color(0xFF4A1059), size: 40),
                       ),
                     );
                   },
@@ -611,8 +618,8 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-const _purpleHome = Color(0xFF4A3298);
-const _purpleDarkHome = Color(0xFF2E1D6B);
+const _purpleHome = Color(0xFF4A1059);
+const _purpleDarkHome = Color(0xFF4A1059);
 const _purpleLightHome = Color(0xFF7C5CBF);
 const _purpleBgHome = Color(0xFFF3EEFF);
 const _grey600Home = Color(0xFF757575);
@@ -1104,10 +1111,19 @@ class _BookingCard extends StatelessWidget {
 
 const aiIcon = '''
 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect x="6" y="8" width="12" height="8" rx="2" stroke="#4A3298" stroke-width="2"/>
-<circle cx="9" cy="12" r="1.5" fill="#4A3298"/>
-<circle cx="15" cy="12" r="1.5" fill="#4A3298"/>
-<path d="M12 4V6" stroke="#4A3298" stroke-width="2" stroke-linecap="round"/>
+<rect x="6" y="8" width="12" height="8" rx="2" stroke="#FF7643" stroke-width="2"/>
+<circle cx="9" cy="12" r="1.5" fill="#FF7643"/>
+<circle cx="15" cy="12" r="1.5" fill="#FF7643"/>
+<path d="M12 4V6" stroke="#FF7643" stroke-width="2" stroke-linecap="round"/>
+</svg>
+''';
+
+const petProfileIcon = '''
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 20C8 20 5 17 5 12C5 8.5 7.5 5.5 12 5.5C16.5 5.5 19 8.5 19 12C19 17 16 20 12 20Z" stroke="#FF7643" stroke-width="2" stroke-linecap="round"/>
+<circle cx="9" cy="11" r="1.5" fill="#FF7643"/>
+<circle cx="15" cy="11" r="1.5" fill="#FF7643"/>
+<path d="M11 15C11 15 11.5 16 12 16C12.5 16 13 15 13 15" stroke="#FF7643" stroke-width="2" stroke-linecap="round"/>
 </svg>
 ''';
 
@@ -1126,10 +1142,12 @@ stroke="#FF7643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 
 const consultationIcon = '''
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M9 12H15M12 9V15M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
-stroke="#FF7643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="12" cy="7" r="4" stroke="#FF7643" stroke-width="2"/>
+<path d="M5 21C5 17.134 8.13401 14 12 14C15.866 14 19 17.134 19 21" stroke="#FF7643" stroke-width="2" stroke-linecap="round"/>
+<path d="M11 17H13M12 16V18" stroke="#FF7643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 ''';
+
 
 const vaccineIcon = '''
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1190,7 +1208,7 @@ class _ActiveConsultationsState extends State<ActiveConsultations> {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF4A3298);
+    const purple = Color(0xFF4A1059);
     const purpleBg = Color(0xFFF3EEFF);
 
     return FutureBuilder<List<ConsultationModel>>(

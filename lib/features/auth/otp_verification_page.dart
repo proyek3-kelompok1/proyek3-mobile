@@ -170,11 +170,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               const SizedBox(height: 40),
               
               _isLoading
-                  ? const CircularProgressIndicator(color: Color(0xFF6C63FF))
+                  ? const CircularProgressIndicator(color: Color(0xFF4A1059))
                   : ElevatedButton(
                       onPressed: _handleVerify,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C63FF),
+                        backgroundColor: const Color(0xFF4A1059),
                         minimumSize: const Size(double.infinity, 55),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -195,7 +195,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                     child: Text(
                       _resendTimer == 0 ? 'Kirim Ulang' : 'Kirim Ulang ($_resendTimer)',
                       style: GoogleFonts.poppins(
-                        color: _resendTimer == 0 ? const Color(0xFF6C63FF) : Colors.grey,
+                        color: _resendTimer == 0 ? const Color(0xFF4A1059) : Colors.grey,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

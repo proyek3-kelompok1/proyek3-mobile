@@ -35,7 +35,7 @@ class NotificationListPage extends StatelessWidget {
               "Tandai Baca",
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: const Color(0xFF7C3AED),
+                color: const Color(0xFF4A1059),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -93,7 +93,7 @@ class NotificationListPage extends StatelessWidget {
                     ),
                     child: Icon(
                       Icons.notifications_active_rounded,
-                      color: notif.isRead ? Colors.grey[400] : const Color(0xFF7C3AED),
+                      color: notif.isRead ? Colors.grey[400] : const Color(0xFF4A1059),
                       size: 24,
                     ),
                   ),
