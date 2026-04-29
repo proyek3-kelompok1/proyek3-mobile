@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,20 +7,32 @@ import '../../core/constants/api_constants.dart';
 import '../../core/widgets/shimmer_loading.dart';
 
 // ──────────────────────────────────────────────────────────
-//  COLOUR PALETTE
+//  PALETTE
 // ──────────────────────────────────────────────────────────
-const _purple = Color(0xFF4A3298);
-const _purpleDark = Color(0xFF2E1D6B);
+const _purple      = Color(0xFF4A3298);
+const _purpleDark  = Color(0xFF2E1D6B);
 const _purpleLight = Color(0xFF7C5CBF);
-const _purpleAccent = Color(0xFFB39DDB);
-const _purpleBg = Color(0xFFF3EEFF);
-const _white = Colors.white;
-const _grey100 = Color(0xFFF5F5F5);
-const _grey300 = Color(0xFFE0E0E0);
-const _grey600 = Color(0xFF757575);
+const _purpleAccent= Color(0xFFB39DDB);
+const _purpleBg    = Color(0xFFF3EEFF);
+const _white       = Colors.white;
+const _grey600     = Color(0xFF757575);
+const _teal        = Color(0xFF00B4A6);
+const _amber       = Color(0xFFFFB347);
 
 // ──────────────────────────────────────────────────────────
-//  CHAT MESSAGE MODEL
+//  QUICK SUGGESTIONS  ← tampilin di bawah chat
+// ──────────────────────────────────────────────────────────
+const _suggestions = [
+  ('🐱', 'Kucing saya tidak mau makan dan lemas'),
+  ('🐶', 'Anjing saya muntah dan diare sejak tadi pagi'),
+  ('🐾', 'Hewan saya demam dan batuk sudah 2 hari'),
+  ('🐰', 'Kelinci saya ada luka dan terlihat lesu'),
+  ('💊', 'Cara pemberian obat cacing yang benar?'),
+  ('🧴', 'Tips merawat bulu hewan agar tidak rontok'),
+];
+
+// ──────────────────────────────────────────────────────────
+//  MODEL
 // ──────────────────────────────────────────────────────────
 class _ChatMsg {
   final String text;
@@ -30,72 +41,51 @@ class _ChatMsg {
 
   _ChatMsg({required this.text, required this.isUser, DateTime? time})
       : time = time ?? DateTime.now();
-      
+
   factory _ChatMsg.fromJson(Map<String, dynamic> json) {
+    String timeStr = json['created_at'] ?? '';
+    DateTime parsedTime;
+    
+    try {
+      if (timeStr.contains('T') || timeStr.contains('Z')) {
+        parsedTime = DateTime.parse(timeStr).toLocal();
+      } else {
+        // Jika format "yyyy-mm-dd HH:mm:ss" tanpa timezone, asumsikan UTC dari server
+        parsedTime = DateTime.parse("${timeStr.replaceFirst(' ', 'T')}Z").toLocal();
+      }
+    } catch (_) {
+      parsedTime = DateTime.now();
+    }
+
     return _ChatMsg(
-      text: json['message'],
+      text: json['message'] ?? '',
       isUser: json['is_user'] == 1 || json['is_user'] == true,
-      time: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
+      time: parsedTime,
     );
   }
 }
 
 // ──────────────────────────────────────────────────────────
-//  AI CHAT PAGE
+//  PAGE
 // ──────────────────────────────────────────────────────────
 class AiChatPage extends StatefulWidget {
   const AiChatPage({super.key});
-
   @override
   State<AiChatPage> createState() => _AiChatPageState();
 }
 
 class _AiChatPageState extends State<AiChatPage> with TickerProviderStateMixin {
-  final _controller = TextEditingController();
+  final _controller       = TextEditingController();
   final _scrollController = ScrollController();
   final List<_ChatMsg> _messages = [];
-  bool _isTyping = false;
-  bool _isLoadingHistory = true;
+  bool _isTyping          = false;
+  bool _isLoadingHistory  = true;
+  bool _showSuggestions   = true;
 
   @override
   void initState() {
     super.initState();
     _loadChatHistory();
-  }
-
-  Future<void> _loadChatHistory() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
-      if (token == null) {
-        setState(() => _isLoadingHistory = false);
-        return;
-      }
-
-      final response = await http.get(
-        Uri.parse(ApiConstants.aiHistory),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          _messages.clear();
-          _messages.addAll(data.map((m) => _ChatMsg.fromJson(m)).toList());
-          _isLoadingHistory = false;
-        });
-        _scrollToBottom();
-      } else {
-        setState(() => _isLoadingHistory = false);
-      }
-    } catch (e) {
-      debugPrint('Error loading history: $e');
-      setState(() => _isLoadingHistory = false);
-    }
   }
 
   @override
@@ -105,22 +95,132 @@ class _AiChatPageState extends State<AiChatPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _sendMessage() async {
-    final text = _controller.text.trim();
+  // ── Load history
+  Future<void> _loadChatHistory() async {
+    setState(() => _isLoadingHistory = true);
+    try {
+      final token = await _token();
+      if (token == null) { setState(() => _isLoadingHistory = false); return; }
+
+      final res = await http.get(
+        Uri.parse(ApiConstants.aiHistory),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+      );
+
+      if (res.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(res.body);
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(data.map((m) => _ChatMsg.fromJson(m)));
+          _isLoadingHistory  = false;
+          _showSuggestions   = _messages.isEmpty;
+        });
+        _scrollToBottom();
+      } else {
+        setState(() => _isLoadingHistory = false);
+      }
+    } catch (_) {
+      setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  // ── Delete history
+  Future<void> _deleteHistory() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Hapus Riwayat Chat',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16)),
+        content: Text('Semua riwayat percakapan akan dihapus permanen. Yakin?',
+          style: GoogleFonts.poppins(fontSize: 13, color: _grey600)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Batal', style: GoogleFonts.poppins(color: _grey600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Hapus', style: GoogleFonts.poppins(color: _white, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    // Optimistic Update: Hapus di UI dulu biar cepet
+    final backupMessages = List<_ChatMsg>.from(_messages);
+    setState(() {
+      _messages.clear();
+      _showSuggestions = true;
+    });
+
+    try {
+      final token = await _token();
+      final res = await http.post(
+        Uri.parse(ApiConstants.aiDeleteHistory),
+        headers: {
+          'Authorization': 'Bearer $token', 
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      debugPrint('Delete Status: ${res.statusCode}');
+      debugPrint('Delete Body: ${res.body}');
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Riwayat chat berhasil dihapus',
+              style: GoogleFonts.poppins(fontSize: 13)),
+            backgroundColor: _purple,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ));
+        }
+      } else {
+        // Kembalikan jika gagal di server
+        setState(() {
+          _messages.addAll(backupMessages);
+          _showSuggestions = _messages.isEmpty;
+        });
+        throw Exception('Gagal hapus di server: ${res.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error Delete: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Gagal menghapus riwayat. Coba lagi nanti.',
+            style: GoogleFonts.poppins(fontSize: 13)),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    }
+  }
+
+  // ── Send message
+  Future<void> _sendMessage([String? prefilled]) async {
+    final text = prefilled ?? _controller.text.trim();
     if (text.isEmpty) return;
 
     setState(() {
       _messages.add(_ChatMsg(text: text, isUser: true));
-      _isTyping = true;
+      _isTyping        = true;
+      _showSuggestions = false;
     });
     _controller.clear();
     _scrollToBottom();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
-      final response = await http.post(
+      final token = await _token();
+      final res = await http.post(
         Uri.parse(ApiConstants.aiChat),
         headers: {
           'Content-Type': 'application/json',
@@ -130,234 +230,450 @@ class _AiChatPageState extends State<AiChatPage> with TickerProviderStateMixin {
         body: jsonEncode({'message': text}),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
         setState(() {
           _messages.add(_ChatMsg(text: data['message'], isUser: false));
           _isTyping = false;
         });
       } else {
-        setState(() {
-          _isTyping = false;
-          _messages.add(_ChatMsg(
-            text: 'Terjadi kesalahan (${response.statusCode}). Pastikan server aktif.',
-            isUser: false,
-          ));
-        });
+        _addError('Terjadi kesalahan (${res.statusCode}). Coba lagi ya!');
       }
-      _scrollToBottom();
-    } catch (e) {
-      setState(() {
-        _messages.add(_ChatMsg(text: "Koneksi terputus. Silakan coba lagi nanti.", isUser: false));
-        _isTyping = false;
-      });
-      _scrollToBottom();
+    } catch (_) {
+      _addError('Koneksi terputus. Pastikan server aktif dan coba lagi.');
     }
+    _scrollToBottom();
   }
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+  void _addError(String msg) => setState(() {
+    _messages.add(_ChatMsg(text: msg, isUser: false));
+    _isTyping = false;
+  });
+
+  void _scrollToBottom() => Future.delayed(const Duration(milliseconds: 120), () {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  });
+
+  Future<String?> _token() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
   }
 
+  // ────────────────────────────────────────────────────────
+  //  BUILD
+  // ────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _purpleBg,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "DVPets AI Assistant",
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: _white,
-              ),
-            ),
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.greenAccent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  "Online • Veterinary Assistant",
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color: _white.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        backgroundColor: _purple,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () => _loadChatHistory(),
-            icon: const Icon(Icons.refresh, color: _white),
-          ),
-        ],
-      ),
+      appBar: _buildAppBar(),
       body: Column(
         children: [
           Expanded(
-            child: _isLoadingHistory 
-              ? const ShimmerList(itemCount: 8)
-              : _messages.isEmpty 
-                ? _buildEmptyState()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      return _MessageTile(message: _messages[index]);
-                    },
-                  ),
+            child: _isLoadingHistory
+                ? const ShimmerList(itemCount: 6)
+                : _messages.isEmpty
+                    ? _buildWelcome()
+                    : _buildMessageList(),
           ),
-          if (_isTyping) _buildTypingIndicator(),
-          _buildInputArea(),
+          if (_isTyping) _buildTyping(),
+          if (_showSuggestions && !_isTyping) _buildSuggestionBar(),
+          _buildActionButtons(),
+          _buildInput(),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  // ── Action Buttons (Refresh & Clear)
+  Widget _buildActionButtons() {
+    if (_messages.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: _purple.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.auto_awesome, size: 40, color: _purple),
+          _miniActionBtn(
+            icon: Icons.refresh_rounded,
+            label: 'Refresh',
+            onTap: _loadChatHistory,
           ),
-          const SizedBox(height: 16),
-          Text(
-            "Mulai Chat dengan AI",
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: _purpleDark,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
-              "Tanyakan apa saja seputar kesehatan hewan kesayangan Anda.",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: _grey600),
-            ),
+          const SizedBox(width: 8),
+          _miniActionBtn(
+            icon: Icons.delete_outline_rounded,
+            label: 'Hapus Chat',
+            color: Colors.red.withOpacity(0.7),
+            onTap: _deleteHistory,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTypingIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      alignment: Alignment.centerLeft,
+  Widget _miniActionBtn({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: _white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _purple.withOpacity(0.1)),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4)],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(strokeWidth: 2, color: _purpleLight),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              "DVPets AI sedang mengetik...",
-              style: GoogleFonts.poppins(fontSize: 10, fontStyle: FontStyle.italic, color: _grey600),
-            ),
+            Icon(icon, size: 14, color: color ?? _purpleLight),
+            const SizedBox(width: 4),
+            Text(label,
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: color ?? _purpleLight,
+                )),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInputArea() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: _white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: _purple.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  // ── AppBar — branded, veterinary clinic style
+  PreferredSizeWidget _buildAppBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(70),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF2E1D6B), Color(0xFF4A3298), Color(0xFF6A4BC4)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              style: GoogleFonts.poppins(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: "Tanyakan sesuatu...",
-                hintStyle: GoogleFonts.poppins(fontSize: 14, color: _grey600),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-              ),
-              onSubmitted: (_) => _sendMessage(),
+          boxShadow: [BoxShadow(
+            color: Color(0x404A3298), blurRadius: 12, offset: Offset(0, 4))],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              children: [
+                // Back button
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _white, size: 18),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+                // Avatar klinik
+                Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    color: _white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _white.withOpacity(0.3), width: 1.5),
+                  ),
+                  child: const Icon(Icons.local_hospital_rounded, color: _white, size: 22),
+                ),
+                const SizedBox(width: 10),
+                // Title
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Klinik Virtual DVPets',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15, fontWeight: FontWeight.w700, color: _white)),
+                      Row(children: [
+                        Container(
+                          width: 6, height: 6,
+                          margin: const EdgeInsets.only(right: 5),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF69F0AE), shape: BoxShape.circle),
+                        ),
+                        Text('Dokter AI Siap Konsultasi',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10.5, color: _white.withOpacity(0.85))),
+                      ]),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ── Welcome state
+  Widget _buildWelcome() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 8),
+      child: Column(
+        children: [
+          // Ilustrasi
           Container(
-            margin: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(
-              color: _purple,
+            width: 90, height: 90,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [_purple.withOpacity(0.12), _teal.withOpacity(0.08)],
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+              ),
               shape: BoxShape.circle,
             ),
-            child: IconButton(
-              icon: const Icon(Icons.send_rounded, color: _white, size: 20),
-              onPressed: _sendMessage,
-            ),
+            child: const Icon(Icons.local_hospital_rounded, size: 42, color: _purple),
+          ),
+          const SizedBox(height: 16),
+          Text('Selamat Datang di Klinik Virtual',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 17, fontWeight: FontWeight.w700, color: _purpleDark)),
+          const SizedBox(height: 6),
+          Text('Ceritakan kondisi hewan kesayanganmu.\nModel AI kami siap membantu diagnosa & saran.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 12.5, color: _grey600, height: 1.6)),
+          const SizedBox(height: 20),
+          // Statistik kecil
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _statBadge('14', 'Jenis Penyakit'),
+              const SizedBox(width: 12),
+              _statBadge('94.97%', 'Akurasi AI'),
+              const SizedBox(width: 12),
+              _statBadge('Gratis', 'Konsultasi'),
+            ],
           ),
         ],
       ),
     );
   }
+
+  Widget _statBadge(String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: _white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _purple.withOpacity(0.15)),
+        boxShadow: [BoxShadow(
+          color: _purple.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        children: [
+          Text(value,
+            style: GoogleFonts.poppins(
+              fontSize: 14, fontWeight: FontWeight.w700, color: _purple)),
+          Text(label,
+            style: GoogleFonts.poppins(fontSize: 9.5, color: _grey600)),
+        ],
+      ),
+    );
+  }
+
+  // ── Message list
+  Widget _buildMessageList() {
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      itemCount: _messages.length,
+      itemBuilder: (_, i) => _MessageTile(message: _messages[i]),
+    );
+  }
+
+  // ── Typing indicator
+  Widget _buildTyping() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, bottom: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _avatar(false),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: _white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8, offset: const Offset(0, 2))],
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              _Dot(delay: 0),
+              const SizedBox(width: 4),
+              _Dot(delay: 200),
+              const SizedBox(width: 4),
+              _Dot(delay: 400),
+              const SizedBox(width: 8),
+              Text('Sedang menganalisa...',
+                style: GoogleFonts.poppins(
+                  fontSize: 11, fontStyle: FontStyle.italic, color: _grey600)),
+            ]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Suggestion chips bar (horizontal scroll)
+  Widget _buildSuggestionBar() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, top: 10, bottom: 6),
+          child: Text('Coba tanyakan:',
+            style: GoogleFonts.poppins(
+              fontSize: 11.5, fontWeight: FontWeight.w600,
+              color: _purpleLight, letterSpacing: 0.3)),
+        ),
+        SizedBox(
+          height: 44,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: _suggestions.length,
+            itemBuilder: (_, i) {
+              final (emoji, text) = _suggestions[i];
+              return GestureDetector(
+                onTap: () => _sendMessage(text),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _white,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: _purple.withOpacity(0.25), width: 1),
+                    boxShadow: [BoxShadow(
+                      color: _purple.withOpacity(0.07),
+                      blurRadius: 6, offset: const Offset(0, 2))],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(emoji, style: const TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
+                      Text(text,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12, color: _purpleDark,
+                          fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 4),
+      ],
+    );
+  }
+
+  // ── Input bar
+  Widget _buildInput() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: _white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [BoxShadow(
+          color: _purple.withOpacity(0.12),
+          blurRadius: 12, offset: const Offset(0, 4))],
+      ),
+      child: Row(children: [
+        Expanded(
+          child: TextField(
+            controller: _controller,
+            style: GoogleFonts.poppins(fontSize: 14),
+            maxLines: null,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              hintText: 'Ceritakan kondisi hewan kamu...',
+              hintStyle: GoogleFonts.poppins(fontSize: 13.5, color: _grey600),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            onSubmitted: (_) => _sendMessage(),
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.all(4),
+          decoration: const BoxDecoration(color: _purple, shape: BoxShape.circle),
+          child: IconButton(
+            icon: const Icon(Icons.send_rounded, color: _white, size: 20),
+            onPressed: () => _sendMessage(),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _avatar(bool isUser) => Container(
+    width: 32, height: 32,
+    decoration: BoxDecoration(
+      color: isUser ? _purpleAccent : _teal,
+      shape: BoxShape.circle,
+      border: Border.all(color: _white, width: 2),
+    ),
+    child: Icon(
+      isUser ? Icons.person_rounded : Icons.local_hospital_rounded,
+      size: 15, color: _white,
+    ),
+  );
 }
 
 // ──────────────────────────────────────────────────────────
-//  MESSAGE TILE WIDGET
+//  ANIMATED DOT
+// ──────────────────────────────────────────────────────────
+class _Dot extends StatefulWidget {
+  final int delay;
+  const _Dot({required this.delay});
+  @override
+  State<_Dot> createState() => _DotState();
+}
+class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))
+      ..repeat(reverse: true);
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+    if (widget.delay > 0) {
+      _ctrl.stop();
+      Future.delayed(Duration(milliseconds: widget.delay), () {
+        if (mounted) _ctrl.repeat(reverse: true);
+      });
+    }
+  }
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: _anim,
+    child: Container(
+      width: 7, height: 7,
+      decoration: const BoxDecoration(color: _teal, shape: BoxShape.circle),
+    ),
+  );
+}
+
+// ──────────────────────────────────────────────────────────
+//  MESSAGE TILE
 // ──────────────────────────────────────────────────────────
 class _MessageTile extends StatelessWidget {
   final _ChatMsg message;
@@ -365,77 +681,85 @@ class _MessageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isUser = message.isUser;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!message.isUser) _buildAvatar(),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: message.isUser ? _purple : _white,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(20),
-                  topRight: const Radius.circular(20),
-                  bottomLeft: Radius.circular(message.isUser ? 20 : 5),
-                  bottomRight: Radius.circular(message.isUser ? 5 : 20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.text,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: message.isUser ? _white : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "${message.time.hour}:${message.time.minute.toString().padLeft(2, '0')}",
-                    style: GoogleFonts.poppins(
-                      fontSize: 9,
-                      color: message.isUser ? _white.withOpacity(0.7) : _grey600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (message.isUser) _buildAvatar(),
+          if (!isUser) ...[_buildAvatar(false), const SizedBox(width: 8)],
+          Flexible(child: _buildBubble(isUser)),
+          if (isUser) ...[const SizedBox(width: 8), _buildAvatar(true)],
         ],
       ),
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(bool isUser) => Container(
+    width: 30, height: 30,
+    decoration: BoxDecoration(
+      color: isUser ? _purpleAccent : _teal,
+      shape: BoxShape.circle,
+      border: Border.all(color: _white, width: 2),
+    ),
+    child: Icon(
+      isUser ? Icons.person_rounded : Icons.local_hospital_rounded,
+      size: 14, color: _white,
+    ),
+  );
+
+  Widget _buildBubble(bool isUser) {
+    final lines = message.text.split('\n');
+
     return Container(
-      width: 35,
-      height: 35,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: message.isUser ? _purpleAccent : _purpleLight,
-        shape: BoxShape.circle,
-        border: Border.all(color: _white, width: 2),
+        color: isUser ? _purple : _white,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(18),
+          topRight: const Radius.circular(18),
+          bottomLeft: Radius.circular(isUser ? 18 : 4),
+          bottomRight: Radius.circular(isUser ? 4 : 18),
+        ),
+        boxShadow: [BoxShadow(
+          color: Colors.black.withOpacity(0.07),
+          blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Center(
-        child: Icon(
-          message.isUser ? Icons.person : Icons.auto_awesome,
-          size: 16,
-          color: _white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...lines.map((l) => _renderLine(l, isUser)),
+          const SizedBox(height: 3),
+          Text(
+            '${message.time.hour.toString().padLeft(2, '0')}:${message.time.minute.toString().padLeft(2, '0')}',
+            style: GoogleFonts.poppins(
+              fontSize: 9,
+              color: isUser ? _white.withOpacity(0.55) : _grey600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _renderLine(String line, bool isUser) {
+    final t = line.trim();
+    if (t.isEmpty) return const SizedBox(height: 4);
+
+    final isNumbered  = RegExp(r'^\d+\.').hasMatch(t);
+    final isDashItem  = t.startsWith('- ') || t.startsWith('• ');
+
+    return Padding(
+      padding: EdgeInsets.only(
+        top: 2,
+        left: (isNumbered || isDashItem) ? 6 : 0),
+      child: Text(
+        t,
+        style: GoogleFonts.poppins(
+          fontSize: 13.5,
+          height: 1.55,
+          color: isUser ? _white : Colors.black87,
+          fontWeight: isNumbered ? FontWeight.w500 : FontWeight.normal,
         ),
       ),
     );
