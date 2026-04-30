@@ -1,5 +1,5 @@
-class ApiConstants {
-  static const String baseUrl = "http://10.126.95.90:8000/api";
+﻿class ApiConstants {
+  static const String baseUrl = "http://10.0.164.95:8000/api";
   static const String education = "$baseUrl/education";
   static const String services = "$baseUrl/services";
   static const String booking = "$baseUrl/bookings";
