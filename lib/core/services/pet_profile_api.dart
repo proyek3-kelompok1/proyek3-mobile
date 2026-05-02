@@ -2,14 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/api_constants.dart';
 import '../../models/pet_profile_model.dart';
 
 class PetProfileApi {
-  static const String baseUrl = 'http://192.168.18.23:8000/api'; // Sesuaikan IP
-
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return prefs.getString('auth_token');
   }
 
   static Future<List<PetProfileModel>> getProfiles() async {
@@ -18,7 +17,7 @@ class PetProfileApi {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/pet-profiles'),
+        Uri.parse(ApiConstants.petProfiles),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -45,7 +44,7 @@ class PetProfileApi {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/pet-profiles/$id'),
+        Uri.parse("${ApiConstants.petProfiles}/$id"),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -70,7 +69,7 @@ class PetProfileApi {
     if (token == null) return false;
 
     try {
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/pet-profiles'));
+      var request = http.MultipartRequest('POST', Uri.parse(ApiConstants.petProfiles));
       request.headers['Authorization'] = 'Bearer $token';
       request.headers['Accept'] = 'application/json';
 
@@ -94,7 +93,7 @@ class PetProfileApi {
 
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/pet-profiles/$id'),
+        Uri.parse("${ApiConstants.petProfiles}/$id"),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',

@@ -1,5 +1,6 @@
 ﻿class ApiConstants {
-  static const String baseUrl = "http://10.0.164.95:8000/api";
+  static const String baseUrl = "https://ipzonex.my.id/api";
+  static const String storageUrl = "https://ipzonex.my.id/storage";
   static const String education = "$baseUrl/education";
   static const String services = "$baseUrl/services";
   static const String booking = "$baseUrl/bookings";
@@ -22,6 +23,7 @@
   static const String updateProfile = "$baseUrl/user/profile";
   static const String updateFcmToken = "$baseUrl/user/fcm-token";
   static const String logout = "$baseUrl/logout";
+  static const String petProfiles = "$baseUrl/pet-profiles";
 }
 
 
