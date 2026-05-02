@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/settings_provider.dart';
 import 'terms_and_conditions_screen.dart';
 import 'privacy_policy_screen.dart';
 
@@ -14,26 +16,33 @@ class HelpCenterScreen extends StatefulWidget {
 class _HelpCenterScreenState extends State<HelpCenterScreen> {
   final ScrollController _scrollController = ScrollController();
 
-  final List<Map<String, String>> _allFaqs = [
-    {
-      "question": "Bagaimana cara booking?",
-      "answer": "Pilih layanan yang Anda inginkan di halaman utama, pilih jadwal yang tersedia, lalu lakukan konfirmasi pembayaran."
-    },
-    {
-      "question": "Apakah bisa membatalkan janji?",
-      "answer": "Ya, pembatalan dapat dilakukan maksimal 24 jam sebelum jadwal melalui menu riwayat transaksi."
-    },
-    {
-      "question": "Metode pembayaran apa saja?",
-      "answer": "Kami mendukung berbagai metode pembayaran mulai dari Transfer Bank hingga E-Wallet (Gopay, OVO, Dana)."
-    },
-  ];
+  List<Map<String, String>> _getFaqs(SettingsProvider sp) {
+    return [
+      {
+        "question": sp.translate('faq1_q'),
+        "answer": sp.translate('faq1_a')
+      },
+      {
+        "question": sp.translate('faq2_q'),
+        "answer": sp.translate('faq2_a')
+      },
+      {
+        "question": sp.translate('faq3_q'),
+        "answer": sp.translate('faq3_a')
+      },
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final faqs = _getFaqs(settingsProvider);
+
     const primaryColor = Color(0xFF4A1059);
     const secondaryColor = Color(0xFF8E24AA);
-    const bgColor = Color(0xFFF8F9FE);
+    final bgColor = isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FE);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -54,7 +63,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
               title: Text(
-                "Pusat Bantuan",
+                settingsProvider.translate('help_center_title'),
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 16,
@@ -101,7 +110,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                           ),
                           const SizedBox(height: 15),
                           Text(
-                            "Kami siap membantu Anda",
+                            settingsProvider.translate('ready_to_help'),
                             style: GoogleFonts.poppins(
                               color: Colors.white.withOpacity(0.9),
                               fontSize: 13,
@@ -123,7 +132,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader("Butuh Bantuan Cepat?"),
+                  _buildSectionHeader(settingsProvider.translate('need_fast_help'), isDark),
                   const SizedBox(height: 18),
                   Row(
                     children: [
@@ -131,9 +140,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         child: _buildContactCard(
                           icon: Icons.chat_rounded,
                           title: "WhatsApp",
-                          subtitle: "Chat langsung",
+                          subtitle: settingsProvider.translate('chat_direct'),
                           color: const Color(0xFF25D366),
                           onTap: _launchWhatsApp,
+                          isDark: isDark,
                         ),
                       ),
                       const SizedBox(width: 15),
@@ -141,9 +151,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         child: _buildContactCard(
                           icon: Icons.alternate_email_rounded,
                           title: "Email",
-                          subtitle: "Kirim pesan",
+                          subtitle: settingsProvider.translate('send_message'),
                           color: const Color(0xFFEA4335),
                           onTap: _launchEmail,
+                          isDark: isDark,
                         ),
                       ),
                     ],
@@ -154,15 +165,15 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildSectionHeader("Pertanyaan Umum"),
+                      _buildSectionHeader(settingsProvider.translate('faq_title'), isDark),
                       TextButton(
                         onPressed: () {},
                         style: TextButton.styleFrom(
-                          foregroundColor: primaryColor,
+                          foregroundColor: isDark ? const Color(0xFFC05DE3) : primaryColor,
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                         ),
                         child: Text(
-                          "Lihat Semua",
+                          settingsProvider.translate('lihat_semua'),
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -172,41 +183,44 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  ..._allFaqs.map(
+                  ...faqs.map(
                     (faq) => _buildFAQItem(
                       faq['question']!,
                       faq['answer']!,
+                      isDark,
                     ),
                   ),
 
                   const SizedBox(height: 40),
 
-                  _buildSectionHeader("Hukum & Kebijakan"),
+                  _buildSectionHeader(settingsProvider.translate('legal_policy'), isDark),
                   const SizedBox(height: 18),
                   _buildMenuCard([
                     _buildPolicyTile(
-                      "Syarat & Ketentuan",
+                      settingsProvider.translate('terms'),
                       Icons.description_rounded,
-                      "Aturan penggunaan aplikasi",
+                      settingsProvider.translate('terms_sub'),
                       () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const TermsAndConditionsScreen(),
                         ),
                       ),
+                      isDark,
                     ),
                     _buildPolicyTile(
-                      "Kebijakan Privasi",
+                      settingsProvider.translate('privacy_policy'),
                       Icons.verified_user_rounded,
-                      "Cara kami menjaga data Anda",
+                      settingsProvider.translate('privacy_sub'),
                       () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const PrivacyPolicyScreen(),
                         ),
                       ),
+                      isDark,
                     ),
-                  ]),
+                  ], isDark),
 
                   const SizedBox(height: 50),
                 ],
@@ -219,17 +233,19 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   }
 
   Future<void> _launchWhatsApp() async {
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
     final Uri whatsappUrl = Uri.parse("https://wa.me/6283110050163");
     if (!await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Tidak dapat membuka WhatsApp")),
+          SnackBar(content: Text(settingsProvider.translate('cannot_open_wa'))),
         );
       }
     }
   }
 
   Future<void> _launchEmail() async {
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
       path: 'karinanaw2108@gmail.com',
@@ -241,7 +257,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     if (!await launchUrl(emailLaunchUri)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Tidak dapat membuka aplikasi Email")),
+          SnackBar(content: Text(settingsProvider.translate('cannot_open_email'))),
         );
       }
     }
@@ -254,7 +270,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         .join('&');
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(left: 5),
       child: Text(
@@ -262,29 +278,35 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         style: GoogleFonts.poppins(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: const Color(0xFF2D3142).withOpacity(0.8),
+          color: isDark ? Colors.white70 : const Color(0xFF2D3142).withOpacity(0.8),
           letterSpacing: 0.5,
         ),
       ),
     );
   }
 
-  Widget _buildFAQItem(String question, String answer) {
+  Widget _buildFAQItem(String question, String answer, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.04),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          expansionTileTheme: ExpansionTileThemeData(
+            textColor: isDark ? const Color(0xFFC05DE3) : const Color(0xFF4A1059),
+            iconColor: isDark ? const Color(0xFFC05DE3) : const Color(0xFF4A1059),
+          ),
+        ),
         child: ExpansionTile(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
@@ -294,10 +316,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF4A1059),
             ),
           ),
-          iconColor: const Color(0xFF4A1059),
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -305,7 +325,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 answer,
                 style: GoogleFonts.poppins(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.white70 : Colors.grey[600],
                   height: 1.6,
                 ),
               ),
@@ -322,6 +342,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     required String subtitle,
     required Color color,
     required VoidCallback onTap,
+    required bool isDark,
   }) {
     return Material(
       color: Colors.transparent,
@@ -331,11 +352,11 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.12),
+                color: color.withOpacity(isDark ? 0.2 : 0.12),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -352,7 +373,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               Container(
                 padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.08),
+                  color: color.withOpacity(isDark ? 0.15 : 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 30),
@@ -363,7 +384,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: const Color(0xFF2D3142),
+                  color: isDark ? Colors.white : const Color(0xFF2D3142),
                 ),
               ),
               const SizedBox(height: 4),
@@ -371,7 +392,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 subtitle,
                 style: GoogleFonts.poppins(
                   fontSize: 11,
-                  color: Colors.grey[500],
+                  color: isDark ? Colors.white54 : Colors.grey[500],
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -382,14 +403,14 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     );
   }
 
-  Widget _buildMenuCard(List<Widget> items) {
+  Widget _buildMenuCard(List<Widget> items, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -405,7 +426,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                   height: 1,
                   indent: 70,
                   endIndent: 20,
-                  color: Colors.grey[100],
+                  color: isDark ? Colors.white10 : Colors.grey[100],
                   thickness: 1,
                 ),
             ],
@@ -415,7 +436,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     );
   }
 
-  Widget _buildPolicyTile(String title, IconData icon, String subtitle, VoidCallback onTap) {
+  Widget _buildPolicyTile(String title, IconData icon, String subtitle, VoidCallback onTap, bool isDark) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(25),
@@ -426,7 +447,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF4A1059).withOpacity(0.08),
+                color: const Color(0xFF4A1059).withOpacity(isDark ? 0.15 : 0.08),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Icon(icon, color: const Color(0xFF4A1059), size: 24),
@@ -441,20 +462,20 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF2D3142),
+                      color: isDark ? Colors.white : const Color(0xFF2D3142),
                     ),
                   ),
                   Text(
                     subtitle,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.grey[500],
+                      color: isDark ? Colors.white54 : Colors.grey[500],
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey[300]),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: isDark ? Colors.white24 : Colors.grey[300]),
           ],
         ),
       ),

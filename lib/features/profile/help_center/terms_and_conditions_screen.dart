@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/settings_provider.dart';
 
 class TermsAndConditionsScreen extends StatelessWidget {
   const TermsAndConditionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     const primaryColor = Color(0xFF4A1059);
     const secondaryColor = Color(0xFF8E24AA);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FE),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -27,7 +33,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
               title: Text(
-                "Syarat & Ketentuan",
+                settingsProvider.translate('terms_title'),
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 16,
@@ -61,43 +67,49 @@ class TermsAndConditionsScreen extends StatelessWidget {
                 children: [
                   _buildSection(
                     1,
-                    "Penerimaan Ketentuan",
-                    "Dengan menggunakan aplikasi DVPets, Anda setuju untuk terikat oleh Syarat & Ketentuan ini. Jika Anda tidak menyetujui bagian apa pun dari ketentuan ini, Anda tidak diperbolehkan menggunakan layanan kami.",
+                    settingsProvider.translate('terms_sec1_t'),
+                    settingsProvider.translate('terms_sec1_c'),
+                    isDark,
                   ),
                   _buildSection(
                     2,
-                    "Layanan Kami",
-                    "DVPets menyediakan platform untuk booking layanan kesehatan hewan, konsultasi dokter hewan, dan manajemen rekam medis hewan peliharaan Anda.",
+                    settingsProvider.translate('terms_sec2_t'),
+                    settingsProvider.translate('terms_sec2_c'),
+                    isDark,
                   ),
                   _buildSection(
                     3,
-                    "Akun Pengguna",
-                    "Anda bertanggung jawab untuk menjaga kerahasiaan informasi akun dan kata sandi Anda. Anda setuju untuk bertanggung jawab atas semua aktivitas yang terjadi di bawah akun Anda.",
+                    settingsProvider.translate('terms_sec3_t'),
+                    settingsProvider.translate('terms_sec3_c'),
+                    isDark,
                   ),
                   _buildSection(
                     4,
-                    "Kebijakan Pembatalan",
-                    "Pembatalan janji temu dapat dilakukan melalui aplikasi paling lambat 24 jam sebelum waktu yang dijadwalkan. Pembatalan yang dilakukan kurang dari 24 jam mungkin akan dikenakan biaya administrasi.",
+                    settingsProvider.translate('terms_sec4_t'),
+                    settingsProvider.translate('terms_sec4_c'),
+                    isDark,
                   ),
                   _buildSection(
                     5,
-                    "Batasan Tanggung Jawab",
-                    "DVPets tidak bertanggung jawab atas kerugian atau kerusakan yang timbul dari penggunaan layanan kami, kecuali jika diwajibkan oleh hukum yang berlaku.",
+                    settingsProvider.translate('terms_sec5_t'),
+                    settingsProvider.translate('terms_sec5_c'),
+                    isDark,
                   ),
                   _buildSection(
                     6,
-                    "Perubahan Ketentuan",
-                    "Kami berhak untuk mengubah Syarat & Ketentuan ini kapan saja. Perubahan akan berlaku segera setelah dipublikasikan di aplikasi.",
+                    settingsProvider.translate('terms_sec6_t'),
+                    settingsProvider.translate('terms_sec6_c'),
+                    isDark,
                   ),
                   const SizedBox(height: 30),
                   Center(
                     child: Column(
                       children: [
                         Text(
-                          "Terakhir diperbarui: 30 April 2026",
+                          settingsProvider.translate('last_updated'),
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.grey[500],
+                            color: isDark ? Colors.white38 : Colors.grey[500],
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -105,17 +117,17 @@ class TermsAndConditionsScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: primaryColor.withOpacity(0.1),
+                                color: primaryColor.withOpacity(isDark ? 0.3 : 0.1),
                                 blurRadius: 15,
                                 offset: const Offset(0, 8),
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.verified_user_rounded, color: primaryColor, size: 28),
+                          child: Icon(Icons.verified_user_rounded, color: isDark ? const Color(0xFFC05DE3) : primaryColor, size: 28),
                         ),
                       ],
                     ),
@@ -130,16 +142,16 @@ class TermsAndConditionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(int index, String title, String content) {
+  Widget _buildSection(int index, String title, String content, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 25),
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -186,7 +198,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2D3142),
+                    color: isDark ? Colors.white : const Color(0xFF2D3142),
                   ),
                 ),
               ),
@@ -197,7 +209,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
             content,
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.grey[600],
+              color: isDark ? Colors.white70 : Colors.grey[600],
               height: 1.8,
             ),
             textAlign: TextAlign.justify,

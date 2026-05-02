@@ -22,6 +22,9 @@ import 'dart:convert';
 import 'package:dvpets/models/consultation_model.dart';
 import 'package:dvpets/core/services/consultation_api.dart';
 import 'package:dvpets/features/consultation/chat_page.dart';
+import 'package:provider/provider.dart';
+import 'package:dvpets/core/providers/settings_provider.dart';
+import 'package:dvpets/features/ai/ai_chat_page.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -79,6 +82,9 @@ class _HomeHeaderState extends State<HomeHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -89,18 +95,18 @@ class _HomeHeaderState extends State<HomeHeader> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Halo, $_userName! 🐾",
+                  settingsProvider.translate('halo').replaceAll('{name}', _userName),
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF4A1059),
+                    color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF4A1059),
                   ),
                 ),
                 Text(
-                  "Semoga harimu menyenangkan",
+                  settingsProvider.translate('harimu_menyenangkan'),
                   style: GoogleFonts.poppins(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -134,13 +140,17 @@ class SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context);
+
     return Form(
       child: TextFormField(
         onChanged: (value) {},
+        style: TextStyle(color: theme.textTheme.bodyLarge?.color),
         decoration: InputDecoration(
           filled: true,
-          hintStyle: const TextStyle(color: Color(0xFF757575)),
-          fillColor: const Color(0xFF979797).withOpacity(0.1),
+          hintStyle: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.5)),
+          fillColor: theme.brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : const Color(0xFF979797).withOpacity(0.1),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 8,
@@ -157,8 +167,8 @@ class SearchField extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(12)),
             borderSide: BorderSide.none,
           ),
-          hintText: "Search",
-          prefixIcon: const Icon(Icons.search),
+          hintText: settingsProvider.translate('search'),
+          prefixIcon: Icon(Icons.search, color: theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey),
         ),
       ),
     );
@@ -231,6 +241,8 @@ class DiscountBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       child: Stack(
@@ -251,10 +263,10 @@ class DiscountBanner extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   "DVPets",
                   style: TextStyle(
                     color: Colors.white,
@@ -262,10 +274,10 @@ class DiscountBanner extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  "Konsultasi hewan\npeliharaan Anda dengan\ncepat dan mudah.",
-                  style: TextStyle(
+                  settingsProvider.translate('konsultasi_cepat'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     height: 1.4,
@@ -293,21 +305,28 @@ class Categories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+
     final List<Map<String, dynamic>> categories = [
       {
         "icon": bookingIcon,
-        "text": "Antrian",
+        "text": settingsProvider.translate('antrian'),
         "page": const BookingPage(),
       },
       {
         "icon": consultationIcon,
-        "text": "Konsultasi",
+        "text": settingsProvider.translate('konsultasi'),
         "page": const DoctorListPage(),
       },
       {
         "icon": rekamMedisIcon,
-        "text": "Rekam Medis",
+        "text": settingsProvider.translate('rekam_medis'),
         "page": const MedicalRecordListPage(),
+      },
+      {
+        "icon": aiIcon,
+        "text": settingsProvider.translate('dokter_paw'),
+        "page": const AiChatPage(),
       },
     ];
 
@@ -317,6 +336,7 @@ class Categories extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: List.generate(
+
           categories.length,
           (index) => CategoryCard(
             icon: categories[index]["icon"],
@@ -349,6 +369,7 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: press,
       child: Column(
@@ -358,13 +379,20 @@ class CategoryCard extends StatelessWidget {
             height: 56,
             width: 56,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFECDF),
+              color: theme.brightness == Brightness.dark ? const Color(0xFF4A1059).withOpacity(0.3) : const Color(0xFFFFECDF),
               borderRadius: BorderRadius.circular(10),
             ),
             child: SvgPicture.string(icon),
           ),
           const SizedBox(height: 4),
-          Text(text, textAlign: TextAlign.center),
+          Text(
+            text, 
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.textTheme.bodyMedium?.color,
+            ),
+          ),
         ],
       ),
     );
@@ -422,7 +450,7 @@ class _SpecialOffersState extends State<SpecialOffers> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SectionTitle(
-                title: "Edukasi",
+                title: Provider.of<SettingsProvider>(context, listen: false).translate('edukasi'),
                 press: () {
                   Navigator.push(
                     context,
@@ -502,7 +530,7 @@ class SpecialOfferCard extends StatelessWidget {
                     return Container(
                       color: const Color(0xFFF3EEFF),
                       child: const Center(
-                        child: Icon(Icons.broken_image, color: Color(0xFF4A3298), size: 40),
+                        child: Icon(Icons.broken_image, color: Color(0xFF4A1059), size: 40),
                       ),
                     );
                   },
@@ -561,7 +589,7 @@ class SpecialOfferCard extends StatelessWidget {
                           const Icon(Icons.visibility, color: Colors.white70, size: 14),
                           const SizedBox(width: 4),
                           Text(
-                            "$viewCount kali dilihat",
+                            "$viewCount ${Provider.of<SettingsProvider>(context, listen: false).translate('kali_dilihat')}",
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
@@ -590,29 +618,30 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         TextButton(
           onPressed: press,
-          style: TextButton.styleFrom(foregroundColor: Colors.grey),
-          child: const Text("See more"),
+          style: TextButton.styleFrom(foregroundColor: theme.textTheme.bodySmall?.color?.withOpacity(0.6)),
+          child: Text(Provider.of<SettingsProvider>(context, listen: false).translate('lihat_semua')),
         ),
       ],
     );
   }
 }
 
-const _purpleHome = Color(0xFF4A3298);
-const _purpleDarkHome = Color(0xFF2E1D6B);
+const _purpleHome = Color(0xFF4A1059);
+const _purpleDarkHome = Color(0xFF4A1059);
 const _purpleLightHome = Color(0xFF7C5CBF);
 const _purpleBgHome = Color(0xFFF3EEFF);
 const _grey600Home = Color(0xFF757575);
@@ -685,6 +714,10 @@ class _BookingHistoryState extends State<BookingHistory> {
     return FutureBuilder<List<BookingModel>>(
       future: _future,
       builder: (context, snapshot) {
+        final settingsProvider = Provider.of<SettingsProvider>(context);
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           _scheduleReminders(snapshot.data!);
         }
@@ -696,11 +729,11 @@ class _BookingHistoryState extends State<BookingHistory> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Riwayat Antrian",
+                  settingsProvider.translate('riwayat_booking'),
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -727,7 +760,7 @@ class _BookingHistoryState extends State<BookingHistory> {
             child: Column(
               children: [
                 SectionTitle(
-                  title: "Riwayat Booking",
+                  title: settingsProvider.translate('riwayat_booking'),
                   press: () {
                     Navigator.push(
                       context,
@@ -740,22 +773,22 @@ class _BookingHistoryState extends State<BookingHistory> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: _purpleBgHome,
+                    color: isDark ? Colors.white.withOpacity(0.05) : _purpleBgHome,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _purpleLightHome.withOpacity(0.2)),
+                    border: Border.all(color: isDark ? Colors.white10 : _purpleLightHome.withOpacity(0.2)),
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.event_note_rounded, color: _grey300Home, size: 40),
+                      Icon(Icons.event_note_rounded, color: isDark ? Colors.white24 : _grey300Home, size: 40),
                       const SizedBox(height: 8),
                       Text(
-                        "Belum ada booking aktif",
-                        style: GoogleFonts.poppins(fontSize: 13, color: _grey600Home, fontWeight: FontWeight.w500),
+                        settingsProvider.translate('belum_ada_booking'),
+                        style: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.white70 : _grey600Home, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Booking sekarang untuk hewan peliharaan Anda",
-                        style: GoogleFonts.poppins(fontSize: 11, color: _grey600Home),
+                        settingsProvider.translate('booking_sekarang'),
+                        style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : _grey600Home),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -773,7 +806,7 @@ class _BookingHistoryState extends State<BookingHistory> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SectionTitle(
-                title: "Riwayat Booking",
+                title: settingsProvider.translate('riwayat_booking'),
                 press: () {
                   Navigator.push(
                     context,
@@ -1104,10 +1137,19 @@ class _BookingCard extends StatelessWidget {
 
 const aiIcon = '''
 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect x="6" y="8" width="12" height="8" rx="2" stroke="#4A3298" stroke-width="2"/>
-<circle cx="9" cy="12" r="1.5" fill="#4A3298"/>
-<circle cx="15" cy="12" r="1.5" fill="#4A3298"/>
-<path d="M12 4V6" stroke="#4A3298" stroke-width="2" stroke-linecap="round"/>
+<rect x="6" y="8" width="12" height="8" rx="2" stroke="#FF7643" stroke-width="2"/>
+<circle cx="9" cy="12" r="1.5" fill="#FF7643"/>
+<circle cx="15" cy="12" r="1.5" fill="#FF7643"/>
+<path d="M12 4V6" stroke="#FF7643" stroke-width="2" stroke-linecap="round"/>
+</svg>
+''';
+
+const petProfileIcon = '''
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 20C8 20 5 17 5 12C5 8.5 7.5 5.5 12 5.5C16.5 5.5 19 8.5 19 12C19 17 16 20 12 20Z" stroke="#FF7643" stroke-width="2" stroke-linecap="round"/>
+<circle cx="9" cy="11" r="1.5" fill="#FF7643"/>
+<circle cx="15" cy="11" r="1.5" fill="#FF7643"/>
+<path d="M11 15C11 15 11.5 16 12 16C12.5 16 13 15 13 15" stroke="#FF7643" stroke-width="2" stroke-linecap="round"/>
 </svg>
 ''';
 
@@ -1192,7 +1234,7 @@ class _ActiveConsultationsState extends State<ActiveConsultations> {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF4A3298);
+    const purple = Color(0xFF4A1059);
     const purpleBg = Color(0xFFF3EEFF);
 
     return FutureBuilder<List<ConsultationModel>>(

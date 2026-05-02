@@ -114,7 +114,7 @@ class NotificationService {
       'DV Pets Notifications',
       importance: Importance.max,
       priority: Priority.high,
-      color: const Color(0xFF7C3AED), // Warna Ungu DV Pets
+      color: const Color(0xFF4A1059), // Warna Ungu DV Pets
       styleInformation: BigTextStyleInformation(
         body,
         contentTitle: title,
@@ -122,7 +122,7 @@ class NotificationService {
       ),
       playSound: true,
       enableVibration: true,
-      ledColor: const Color(0xFF7C3AED),
+      ledColor: const Color(0xFF4A1059),
       ledOnMs: 1000,
       ledOffMs: 500,
     );

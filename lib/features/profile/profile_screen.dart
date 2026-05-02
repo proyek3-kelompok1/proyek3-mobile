@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../core/services/auth_api.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/providers/settings_provider.dart';
 import '../auth/login_page.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
@@ -66,11 +68,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return const ShimmerList(itemCount: 5);
     }
 
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context);
+    final isDark = settingsProvider.isDarkMode;
+
     const primaryColor = Color(0xFF4A1059);
     const secondaryColor = Color(0xFF8E24AA);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -82,21 +88,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   height: 220,
                   width: double.infinity,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [primaryColor, secondaryColor],
+                      colors: isDark 
+                        ? [const Color(0xFF2D1035), const Color(0xFF4A1059)]
+                        : [primaryColor, secondaryColor],
                     ),
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(50),
                       bottomRight: Radius.circular(50),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(0x404A1059),
+                        color: isDark ? Colors.black45 : const Color(0x404A1059),
                         blurRadius: 20,
-                        offset: Offset(0, 10),
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
@@ -106,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         children: [
                           Text(
-                            "Profil Saya",
+                            settingsProvider.translate('my_profile'),
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -125,7 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     tag: 'profile_pic',
                     child: ProfilePic(
                       avatarUrl: _userData?['avatar'],
-                      borderColor: Colors.white,
+                      borderColor: isDark ? const Color(0xFF8E24AA) : Colors.white,
                     ),
                   ),
                 ),
@@ -138,11 +146,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Column(
               children: [
                 Text(
-                  _userData?['name'] ?? "Pengguna",
+                  _userData?['name'] ?? settingsProvider.translate('guest'),
                   style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2D3142),
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -150,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _userData?['email'] ?? "email@example.com",
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -159,7 +167,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     margin: const EdgeInsets.only(top: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.cardColor,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -197,13 +205,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader("Pengaturan Akun"),
+                  _buildSectionHeader(settingsProvider.translate('account_settings')),
                   const SizedBox(height: 15),
                   _buildMenuCard([
                     ProfileMenu(
-                      text: "Edit Akun",
+                      text: settingsProvider.translate('edit_account'),
                       icon: Icons.person_rounded,
-                      subtitle: "Ubah nama, email, dan lainnya",
+                      subtitle: settingsProvider.translate('edit_account_sub'),
                       onTap: () async {
                         final result = await Navigator.push(
                           context,
@@ -217,9 +225,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
                     ProfileMenu(
-                      text: "Pengaturan",
+                      text: settingsProvider.translate('settings'),
                       icon: Icons.settings_suggest_rounded,
-                      subtitle: "Notifikasi, bahasa, dan keamanan",
+                      subtitle: settingsProvider.translate('settings_sub'),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -231,13 +239,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ]),
                   const SizedBox(height: 30),
-                  _buildSectionHeader("Dukungan & Lainnya"),
+                  _buildSectionHeader(settingsProvider.translate('support_more')),
                   const SizedBox(height: 15),
                   _buildMenuCard([
                     ProfileMenu(
-                      text: "Pusat Bantuan",
+                      text: settingsProvider.translate('help_center'),
                       icon: Icons.help_center_rounded,
-                      subtitle: "FAQ dan kontak dukungan",
+                      subtitle: settingsProvider.translate('help_center_sub'),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -248,9 +256,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
                     ProfileMenu(
-                      text: "Keluar",
+                      text: settingsProvider.translate('logout'),
                       icon: Icons.logout_rounded,
-                      subtitle: "Keluar dari akun Anda",
+                      subtitle: settingsProvider.translate('logout_sub'),
                       isLogout: true,
                       onTap: _handleLogout,
                     ),
@@ -266,6 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(left: 5),
       child: Text(
@@ -273,7 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         style: GoogleFonts.poppins(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: const Color(0xFF2D3142).withOpacity(0.8),
+          color: theme.textTheme.bodyLarge?.color?.withOpacity(0.8),
           letterSpacing: 0.5,
         ),
       ),
@@ -281,20 +290,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildMenuCard(List<Widget> items) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.01),
-            blurRadius: 1,
-            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -308,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   height: 1,
                   indent: 70,
                   endIndent: 20,
-                  color: Colors.grey[100],
+                  color: theme.dividerColor.withOpacity(0.1),
                   thickness: 1,
                 ),
             ],
@@ -337,6 +342,7 @@ class ProfileMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final color = isLogout ? const Color(0xFFEA4335) : const Color(0xFF4A1059);
 
     return Material(
@@ -364,7 +370,7 @@ class ProfileMenu extends StatelessWidget {
                     Text(
                       text,
                       style: GoogleFonts.poppins(
-                        color: const Color(0xFF2D3142),
+                        color: theme.textTheme.bodyLarge?.color,
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                       ),
@@ -372,7 +378,7 @@ class ProfileMenu extends StatelessWidget {
                     Text(
                       subtitle,
                       style: GoogleFonts.poppins(
-                        color: Colors.grey[500],
+                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -400,10 +406,11 @@ class ProfilePic extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
@@ -421,7 +428,7 @@ class ProfilePic extends StatelessWidget {
         ),
         child: CircleAvatar(
           radius: 65,
-          backgroundColor: const Color(0xFFF3EEFF),
+          backgroundColor: theme.brightness == Brightness.dark ? Colors.grey[800] : const Color(0xFFF3EEFF),
           backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
           child: avatarUrl == null 
               ? const Icon(Icons.person_rounded, size: 85, color: Color(0xFF4A1059))

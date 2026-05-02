@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:provider/provider.dart';
 import 'core/services/notification_service.dart';
+import 'core/providers/settings_provider.dart';
 import 'navbar_page.dart';
 import 'features/auth/login_page.dart';
 
@@ -22,7 +24,12 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('auth_token');
   
-  runApp(MyApp(isLoggedIn: token != null));
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => SettingsProvider(),
+      child: MyApp(isLoggedIn: token != null),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -31,11 +38,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      themeMode: settingsProvider.themeMode,
+      locale: settingsProvider.locale,
       theme: ThemeData(
         useMaterial3: true,
-        primaryColor: const Color(0xFF6C63FF),
+        primaryColor: const Color(0xFF4A1059),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF4A1059),
+          brightness: Brightness.light,
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        primaryColor: const Color(0xFF4A1059),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF4A1059),
+          brightness: Brightness.dark,
+        ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: isLoggedIn ? const NavBarPage() : const LoginPage(),

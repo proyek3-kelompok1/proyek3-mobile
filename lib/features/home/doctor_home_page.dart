@@ -42,7 +42,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF6C63FF);
+    const primary = Color(0xFF4A1059);
     const primaryDark = Color(0xFF4A1059);
     const bg = Color(0xFFF8F9FE);
 

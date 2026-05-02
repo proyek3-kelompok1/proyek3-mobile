@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/settings_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,30 +12,32 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
-  bool _darkMode = false;
-  String _selectedLanguage = "Bahasa Indonesia";
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFFF8F9FE);
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context);
+    final isDark = settingsProvider.isDarkMode;
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
         child: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF4A1059), Color(0xFF8E24AA)],
+              colors: isDark 
+                ? [const Color(0xFF2D1035), const Color(0xFF4A1059)]
+                : [const Color(0xFF4A1059), const Color(0xFF8E24AA)],
             ),
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
             boxShadow: [
               BoxShadow(
-                color: Color(0x304A1059),
+                color: isDark ? Colors.black45 : const Color(0x304A1059),
                 blurRadius: 15,
-                offset: Offset(0, 8),
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -47,11 +51,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Pengaturan',
+                        settingsProvider.translate('settings'),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -73,67 +77,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionHeader("Preferensi Umum"),
+            _buildSectionHeader(settingsProvider.translate('general_prefs')),
             const SizedBox(height: 12),
             _buildSettingsCard([
               _buildSwitchTile(
                 icon: Icons.notifications_active_rounded,
-                title: "Notifikasi",
-                subtitle: "Update status booking & promo",
+                title: settingsProvider.translate('notifications'),
+                subtitle: settingsProvider.translate('notifications_sub'),
                 value: _notificationsEnabled,
                 onChanged: (val) => setState(() => _notificationsEnabled = val),
               ),
               _buildSwitchTile(
                 icon: Icons.dark_mode_rounded,
-                title: "Mode Gelap",
-                subtitle: "Tampilan gelap yang nyaman",
-                value: _darkMode,
-                onChanged: (val) => setState(() => _darkMode = val),
+                title: settingsProvider.translate('dark_mode'),
+                subtitle: settingsProvider.translate('dark_mode_sub'),
+                value: settingsProvider.isDarkMode,
+                onChanged: (val) => settingsProvider.toggleTheme(val),
               ),
               _buildActionTile(
                 icon: Icons.translate_rounded,
-                title: "Bahasa Aplikasi",
-                subtitle: _selectedLanguage,
-                onTap: _showLanguagePicker,
+                title: settingsProvider.translate('app_language'),
+                subtitle: settingsProvider.locale.languageCode == 'id' ? "Bahasa Indonesia" : "English (US)",
+                onTap: () => _showLanguagePicker(settingsProvider),
               ),
             ]),
 
             const SizedBox(height: 30),
 
-            _buildSectionHeader("Keamanan & Akun"),
+            _buildSectionHeader(settingsProvider.translate('security_account')),
             const SizedBox(height: 12),
             _buildSettingsCard([
               _buildActionTile(
                 icon: Icons.lock_person_rounded,
-                title: "Ubah Kata Sandi",
-                subtitle: "Perbarui keamanan akun Anda",
+                title: settingsProvider.translate('change_password'),
+                subtitle: settingsProvider.translate('change_password_sub'),
                 onTap: () {},
               ),
-              // _buildActionTile(
-              //   icon: Icons.phonelink_lock_rounded,
-              //   title: "Verifikasi Dua Langkah",
-              //   subtitle: "Keamanan ekstra untuk login",
-              //   onTap: () {},
-              // ),
             ]),
 
             const SizedBox(height: 30),
 
-            _buildSectionHeader("Tentang Kami"),
+            _buildSectionHeader(settingsProvider.translate('about_us')),
             const SizedBox(height: 12),
             _buildSettingsCard([
               _buildActionTile(
                 icon: Icons.star_outline_rounded,
-                title: "Beri Rating",
-                subtitle: "Bantu kami menjadi lebih baik",
+                title: settingsProvider.translate('rate_us'),
+                subtitle: settingsProvider.translate('rate_us_sub'),
                 onTap: () {},
               ),
-              // _buildActionTile(
-              //   icon: Icons.info_outline_rounded,
-              //   title: "Versi Aplikasi",
-              //   subtitle: "v2.1.0 (Stable Build)",
-              //   onTap: () {},
-              // ),
             ]),
 
             const SizedBox(height: 50),
@@ -144,6 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(left: 25),
       child: Text(
@@ -151,7 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         style: GoogleFonts.poppins(
           fontSize: 14,
           fontWeight: FontWeight.bold,
-          color: const Color(0xFF2D3142).withOpacity(0.7),
+          color: theme.textTheme.bodySmall?.color?.withOpacity(0.7) ?? const Color(0xFF2D3142).withOpacity(0.7),
           letterSpacing: 0.5,
         ),
       ),
@@ -159,21 +152,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSettingsCard(List<Widget> items) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.01),
-            blurRadius: 1,
-            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -187,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   height: 1,
                   indent: 70,
                   endIndent: 20,
-                  color: Colors.grey[100],
+                  color: theme.dividerColor.withOpacity(0.1),
                   thickness: 1,
                 ),
             ],
@@ -204,6 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       child: Row(
@@ -226,14 +216,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2D3142),
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                 ),
                 Text(
                   subtitle,
                   style: GoogleFonts.poppins(
                     fontSize: 12, 
-                    color: Colors.grey[500],
+                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -259,6 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(25),
@@ -284,14 +275,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF2D3142),
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
                   Text(
                     subtitle,
                     style: GoogleFonts.poppins(
                       fontSize: 12, 
-                      color: Colors.grey[500],
+                      color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                     ),
                   ),
                 ],
@@ -304,16 +295,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLanguagePicker() {
+  void _showLanguagePicker(SettingsProvider settingsProvider) {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(35)),
-            boxShadow: [
+          decoration: BoxDecoration(
+            color: theme.bottomSheetTheme.backgroundColor ?? theme.canvasColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(35)),
+            boxShadow: const [
               BoxShadow(
                 color: Colors.black26,
                 blurRadius: 20,
@@ -329,23 +321,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 45,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
               const SizedBox(height: 25),
               Text(
-                "Pilih Bahasa",
+                settingsProvider.translate('select_language'),
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2D3142),
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
               const SizedBox(height: 25),
-              _buildLanguageOption("Bahasa Indonesia", "id"),
-              _buildLanguageOption("English (US)", "us"),
-              _buildLanguageOption("English (UK)", "uk"),
+              _buildLanguageOption(settingsProvider, "Bahasa Indonesia", "id"),
+              _buildLanguageOption(settingsProvider, "English (US)", "en"),
               const SizedBox(height: 20),
             ],
           ),
@@ -354,8 +345,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageOption(String lang, String code) {
-    bool isSelected = _selectedLanguage == lang;
+  Widget _buildLanguageOption(SettingsProvider settingsProvider, String lang, String code) {
+    bool isSelected = settingsProvider.locale.languageCode == code;
+    final theme = Theme.of(context);
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -373,14 +366,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? const Color(0xFF4A1059) : const Color(0xFF2D3142),
+            color: isSelected ? const Color(0xFF4A1059) : theme.textTheme.bodyLarge?.color,
           ),
         ),
         trailing: isSelected 
             ? const Icon(Icons.check_circle_rounded, color: Color(0xFF4A1059), size: 22)
             : null,
         onTap: () {
-          setState(() => _selectedLanguage = lang);
+          settingsProvider.setLocale(code);
           Navigator.pop(context);
         },
       ),

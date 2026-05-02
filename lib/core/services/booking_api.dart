@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants/api_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/booking_model.dart';
 
 class BookingApi {
@@ -22,11 +23,15 @@ class BookingApi {
     required String bookingTime,
     String? catatan,
   }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
     final response = await http.post(
       Uri.parse(ApiConstants.booking),
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
       body: jsonEncode({
         "nama_pemilik": namaPemilik,

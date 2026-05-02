@@ -114,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                       errorBuilder: (context, error, stackTrace) => const Icon(
                         Icons.pets,
                         size: 80,
-                        color: Color(0xFF6C63FF),
+                        color: Color(0xFF4A1059),
                       ),
                     ),
                   ),
@@ -173,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: () {},
                       child: Text(
                         'Lupa Password?',
-                        style: GoogleFonts.poppins(color: const Color(0xFF6C63FF)),
+                        style: GoogleFonts.poppins(color: const Color(0xFF4A1059)),
                       ),
                     ),
                   ),
@@ -181,11 +181,11 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Login Button
                   _isLoading
-                      ? const CircularProgressIndicator(color: Color(0xFF6C63FF))
+                      ? const CircularProgressIndicator(color: Color(0xFF4A1059))
                       : ElevatedButton(
                           onPressed: _handleEmailLogin,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6C63FF),
+                            backgroundColor: const Color(0xFF4A1059),
                             minimumSize: const Size(double.infinity, 55),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
@@ -227,7 +227,7 @@ class _LoginPageState extends State<LoginPage> {
                         Image.asset(
                           'assets/icons/google.png',
                           height: 24,
-                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.login, color: Color(0xFF6C63FF)),
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.login, color: Color(0xFF4A1059)),
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -260,7 +260,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(
                           'Daftar',
                           style: GoogleFonts.poppins(
-                            color: const Color(0xFF6C63FF),
+                            color: const Color(0xFF4A1059),
                             fontWeight: FontWeight.bold,
                           ),
                         ),

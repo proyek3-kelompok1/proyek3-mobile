@@ -22,6 +22,7 @@ class ApiConstants {
   static const String updateProfile = "$baseUrl/user/profile";
   static const String updateFcmToken = "$baseUrl/user/fcm-token";
   static const String logout = "$baseUrl/logout";
+  static const String petProfiles = "$baseUrl/pet-profiles";
 }
 
 

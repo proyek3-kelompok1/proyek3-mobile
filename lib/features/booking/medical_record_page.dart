@@ -8,8 +8,8 @@ class MedicalRecordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF4A3298);
-    const purpleDark = Color(0xFF2E1D6B);
+    const purple = Color(0xFF4A1059);
+    const purpleDark = Color(0xFF4A1059);
     const purpleBg = Color(0xFFF3EEFF);
 
     return Scaffold(
@@ -57,7 +57,7 @@ class _MedicalRecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF4A3298);
+    const purple = Color(0xFF4A1059);
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -188,14 +188,14 @@ class _MedicalRecordCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: const Color(0xFF4A3298)),
+              Icon(icon, size: 14, color: const Color(0xFF4A1059)),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF4A3298),
+                  color: const Color(0xFF4A1059),
                 ),
               ),
             ],

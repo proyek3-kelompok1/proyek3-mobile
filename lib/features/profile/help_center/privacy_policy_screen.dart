@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/settings_provider.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     const primaryColor = Color(0xFF4A1059);
     const secondaryColor = Color(0xFF8E24AA);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FE),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -27,7 +33,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
               title: Text(
-                "Kebijakan Privasi",
+                settingsProvider.translate('privacy_title'),
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 16,
@@ -61,43 +67,49 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 children: [
                   _buildSection(
                     1,
-                    "Informasi yang Kami Kumpulkan",
-                    "Kami mengumpulkan informasi yang Anda berikan secara langsung kepada kami, seperti saat Anda membuat akun, melakukan booking, atau menghubungi layanan pelanggan. Ini termasuk nama, alamat email, nomor telepon, dan informasi hewan peliharaan Anda.",
+                    settingsProvider.translate('privacy_sec1_t'),
+                    settingsProvider.translate('privacy_sec1_c'),
+                    isDark,
                   ),
                   _buildSection(
                     2,
-                    "Penggunaan Informasi",
-                    "Kami menggunakan informasi tersebut untuk memproses booking Anda, memberikan layanan konsultasi, mengelola akun Anda, dan mengirimkan informasi penting terkait layanan kami.",
+                    settingsProvider.translate('privacy_sec2_t'),
+                    settingsProvider.translate('privacy_sec2_c'),
+                    isDark,
                   ),
                   _buildSection(
                     3,
-                    "Keamanan Data",
-                    "Kami menerapkan langkah-langkah keamanan teknis dan organisasional yang tepat untuk melindungi data pribadi Anda dari akses, penggunaan, atau pengungkapan yang tidak sah.",
+                    settingsProvider.translate('privacy_sec3_t'),
+                    settingsProvider.translate('privacy_sec3_c'),
+                    isDark,
                   ),
                   _buildSection(
                     4,
-                    "Berbagi Informasi",
-                    "Kami tidak menjual atau menyewakan informasi pribadi Anda kepada pihak ketiga. Kami hanya berbagi informasi dengan dokter hewan atau mitra layanan yang diperlukan untuk memenuhi kebutuhan medis hewan Anda.",
+                    settingsProvider.translate('privacy_sec4_t'),
+                    settingsProvider.translate('privacy_sec4_c'),
+                    isDark,
                   ),
                   _buildSection(
                     5,
-                    "Hak Anda",
-                    "Anda memiliki hak untuk mengakses, memperbarui, atau meminta penghapusan data pribadi Anda kapan saja melalui pengaturan akun atau dengan menghubungi kami.",
+                    settingsProvider.translate('privacy_sec5_t'),
+                    settingsProvider.translate('privacy_sec5_c'),
+                    isDark,
                   ),
                   _buildSection(
                     6,
-                    "Cookies",
-                    "Aplikasi kami dapat menggunakan cookies dan teknologi serupa untuk meningkatkan pengalaman pengguna dan menganalisis penggunaan aplikasi.",
+                    settingsProvider.translate('privacy_sec6_t'),
+                    settingsProvider.translate('privacy_sec6_c'),
+                    isDark,
                   ),
                   const SizedBox(height: 30),
                   Center(
                     child: Column(
                       children: [
                         Text(
-                          "Terakhir diperbarui: 30 April 2026",
+                          settingsProvider.translate('last_updated'),
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.grey[500],
+                            color: isDark ? Colors.white38 : Colors.grey[500],
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -105,17 +117,17 @@ class PrivacyPolicyScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: primaryColor.withOpacity(0.1),
+                                color: primaryColor.withOpacity(isDark ? 0.3 : 0.1),
                                 blurRadius: 15,
                                 offset: const Offset(0, 8),
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.shield_rounded, color: primaryColor, size: 28),
+                          child: Icon(Icons.shield_rounded, color: isDark ? const Color(0xFFC05DE3) : primaryColor, size: 28),
                         ),
                       ],
                     ),
@@ -130,16 +142,16 @@ class PrivacyPolicyScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(int index, String title, String content) {
+  Widget _buildSection(int index, String title, String content, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 25),
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -186,7 +198,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2D3142),
+                    color: isDark ? Colors.white : const Color(0xFF2D3142),
                   ),
                 ),
               ),
@@ -197,7 +209,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             content,
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.grey[600],
+              color: isDark ? Colors.white70 : Colors.grey[600],
               height: 1.8,
             ),
             textAlign: TextAlign.justify,

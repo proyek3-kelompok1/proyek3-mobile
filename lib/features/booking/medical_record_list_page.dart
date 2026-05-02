@@ -25,7 +25,7 @@ class _MedicalRecordListPageState extends State<MedicalRecordListPage> {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF4A3298);
+    const purple = Color(0xFF4A1059);
     const purpleBg = Color(0xFFF3EEFF);
 
     return Scaffold(
@@ -131,7 +131,7 @@ class _MedicalRecordSimpleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF4A3298);
+    const purple = Color(0xFF4A1059);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
