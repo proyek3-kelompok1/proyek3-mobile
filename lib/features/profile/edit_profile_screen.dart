@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/services/auth_api.dart';
+import 'help_center/terms_and_conditions_screen.dart';
+import 'help_center/privacy_policy_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -64,120 +66,323 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF4A1059);
+    const secondaryColor = Color(0xFF8E24AA);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FE),
       appBar: AppBar(
-        title: Text('Edit Profile', style: GoogleFonts.poppins(color: Colors.black)),
+        title: Text(
+          'Edit Profil',
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF2D3142),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF2D3142), size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // Avatar Edit
-              Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 60,
-                      backgroundColor: const Color(0xFFF3EEFF),
-                      backgroundImage: _imageFile != null 
-                          ? FileImage(_imageFile!) 
-                          : (widget.userData['avatar'] != null 
-                              ? NetworkImage(widget.userData['avatar']) 
-                              : null) as ImageProvider?,
-                      child: _imageFile == null && widget.userData['avatar'] == null
-                          ? const Icon(Icons.person, size: 80, color: Color(0xFF4A1059))
-                          : null,
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: GestureDetector(
-                        onTap: _pickImage,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF4A1059),
-                            shape: BoxShape.circle,
+        child: Column(
+          children: [
+            // Premium Avatar Section with Depth
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 20,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.only(bottom: 40, top: 10),
+              child: Column(
+                children: [
+                  Center(
+                    child: Stack(
+                      children: [
+                        Hero(
+                          tag: 'profile_pic',
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryColor.withOpacity(0.15),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: CircleAvatar(
+                              radius: 65,
+                              backgroundColor: const Color(0xFFF3EEFF),
+                              backgroundImage: _imageFile != null 
+                                  ? FileImage(_imageFile!) 
+                                  : (widget.userData['avatar'] != null 
+                                      ? NetworkImage(widget.userData['avatar']) 
+                                      : null) as ImageProvider?,
+                              child: _imageFile == null && widget.userData['avatar'] == null
+                                  ? const Icon(Icons.person_rounded, size: 85, color: Color(0xFF4A1059))
+                                  : null,
+                            ),
                           ),
-                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
                         ),
+                        Positioned(
+                          right: 4,
+                          bottom: 4,
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [primaryColor, secondaryColor],
+                                ),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 3),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryColor.withOpacity(0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(Icons.camera_enhance_rounded, color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(25),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader("Informasi Pribadi"),
+                    const SizedBox(height: 20),
+
+                    _buildTextField(
+                      controller: _nameController,
+                      label: 'Nama Lengkap',
+                      icon: Icons.person_outline_rounded,
+                      validator: (value) => value == null || value.isEmpty ? 'Nama tidak boleh kosong' : null,
+                    ),
+                    const SizedBox(height: 20),
+
+                    _buildTextField(
+                      initialValue: widget.userData['email'],
+                      label: 'Alamat Email',
+                      icon: Icons.email_outlined,
+                      readOnly: true,
+                    ),
+                    const SizedBox(height: 20),
+
+                    _buildTextField(
+                      controller: _phoneController,
+                      label: 'Nomor Telepon',
+                      icon: Icons.phone_android_rounded,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    
+                    const SizedBox(height: 45),
+
+                    // Modern Save Button with Glow
+                    Container(
+                      width: double.infinity,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: const LinearGradient(
+                          colors: [primaryColor, secondaryColor],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: primaryColor.withOpacity(0.35),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color: secondaryColor.withOpacity(0.2),
+                            blurRadius: 25,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isSaving ? null : _saveProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              )
+                            : Text(
+                                'Simpan Perubahan',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                       ),
                     ),
+                    const SizedBox(height: 40),
+
+                    // Legal Links
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildLegalLink(
+                          "Ketentuan",
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const TermsAndConditionsScreen()),
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 15),
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[400],
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        _buildLegalLink(
+                          "Kebijakan Privasi",
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              // Form Name
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  labelStyle: GoogleFonts.poppins(),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.person),
-                ),
-                validator: (value) => value == null || value.isEmpty ? 'Nama tidak boleh kosong' : null,
-              ),
-              const SizedBox(height: 20),
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 5),
+      child: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF2D3142).withOpacity(0.8),
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
 
-              // Form Email (Read Only)
-              TextFormField(
-                initialValue: widget.userData['email'],
-                readOnly: true,
-                decoration: InputDecoration(
-                  labelText: 'Email Address',
-                  labelStyle: GoogleFonts.poppins(),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.email),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                ),
-              ),
-              const SizedBox(height: 20),
+  Widget _buildLegalLink(String text, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 13,
+          color: const Color(0xFF4A1059),
+          fontWeight: FontWeight.w600,
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    );
+  }
 
-              // Form Phone
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  labelStyle: GoogleFonts.poppins(),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.phone),
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSaving ? null : _saveProfile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4A1059),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: _isSaving
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          'Simpan Perubahan',
-                          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                ),
-              ),
-            ],
+  Widget _buildTextField({
+    String? initialValue,
+    TextEditingController? controller,
+    required String label,
+    required IconData icon,
+    bool readOnly = false,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
           ),
+        ],
+      ),
+      child: TextFormField(
+        initialValue: initialValue,
+        controller: controller,
+        readOnly: readOnly,
+        keyboardType: keyboardType,
+        validator: validator,
+        style: GoogleFonts.poppins(
+          fontSize: 14, 
+          color: const Color(0xFF2D3142),
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(
+            color: Colors.grey[500], 
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: Icon(icon, color: const Color(0xFF4A1059), size: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(color: Colors.grey[100]!, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(color: Color(0xFF4A1059), width: 1.5),
+          ),
+          filled: true,
+          fillColor: readOnly ? const Color(0xFFFBFBFB) : Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),
       ),
     );

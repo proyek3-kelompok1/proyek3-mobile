@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/education_model.dart';
 
 // ──────────────────────────────────────────────────────────
@@ -87,6 +88,42 @@ class EducationDetailPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Play Button Overlay for Video
+                  if (education.type == 'video' && education.videoUrl != null)
+                    Center(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final url = Uri.parse(education.videoUrl!);
+                          try {
+                            // Coba buka di aplikasi luar (YouTube App)
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } catch (e) {
+                            // Fallback kalau gagal, buka di browser biasa
+                            await launchUrl(url);
+                          }
+                        },
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.play_arrow_rounded,
+                            color: Colors.red,
+                            size: 50,
+                          ),
+                        ),
+                      ),
+                    ),
                   // Title and meta on image
                   Positioned(
                     bottom: 20,
@@ -234,6 +271,39 @@ class EducationDetailPage extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+
+                // ── Video Button ────────────────────────────
+                if (education.type == 'video' && education.videoUrl != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final url = Uri.parse(education.videoUrl!);
+                        try {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        } catch (e) {
+                          await launchUrl(url);
+                        }
+                      },
+                      icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.white),
+                      label: Text(
+                        "Tonton Video di YouTube",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
                       ),
                     ),
                   ),

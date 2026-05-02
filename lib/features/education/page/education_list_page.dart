@@ -27,11 +27,43 @@ class EducationListPage extends StatefulWidget {
 class _EducationListPageState extends State<EducationListPage> {
   final EducationService _service = EducationService();
   late Future<List<Education>> _future;
+  List<Education> _allEducation = [];
+  List<Education> _filteredEducation = [];
+  String _searchQuery = "";
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    _future = _service.fetchEducation();
+    _loadData();
+  }
+
+  void _loadData() {
+    setState(() {
+      _future = _service.fetchEducation();
+    });
+    _future.then((list) {
+      setState(() {
+        _allEducation = list;
+        _filteredEducation = list;
+      });
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+      if (query.isEmpty) {
+        _filteredEducation = _allEducation;
+      } else {
+        _filteredEducation = _allEducation
+            .where((edu) =>
+                edu.title.toLowerCase().contains(query.toLowerCase()) ||
+                (edu.description?.toLowerCase().contains(query.toLowerCase()) ??
+                    false))
+            .toList();
+      }
+    });
   }
 
   @override
@@ -84,29 +116,8 @@ class _EducationListPageState extends State<EducationListPage> {
                   );
                 }
 
-                final list = snapshot.data!;
-
-                if (list.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.article_outlined,
-                            color: _purpleAccent, size: 48),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Belum ada artikel",
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: _purpleDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
+                final list = _filteredEducation;
+                
                 return ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   itemCount: list.length,
@@ -154,47 +165,77 @@ class _EducationListPageState extends State<EducationListPage> {
           bottomRight: Radius.circular(28),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Back button
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: _white,
-                size: 22,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          // Title
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Edukasi",
-                  style: GoogleFonts.poppins(
+          Row(
+            children: [
+              // Back button
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
                     color: _white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  "Pelajari lebih lanjut tentang hewan peliharaan",
-                  style: GoogleFonts.poppins(
-                    color: _white.withOpacity(0.75),
-                    fontSize: 12,
-                  ),
+              ),
+              const SizedBox(width: 14),
+              // Title
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Edukasi",
+                      style: GoogleFonts.poppins(
+                        color: _white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Pelajari lebih lanjut tentang hewan peliharaan",
+                      style: GoogleFonts.poppins(
+                        color: _white.withOpacity(0.75),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Search Bar
+          Container(
+            decoration: BoxDecoration(
+              color: _white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
+            ),
+            child: TextField(
+              onChanged: _onSearchChanged,
+              style: GoogleFonts.poppins(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: "Cari tutorial atau video...",
+                hintStyle: GoogleFonts.poppins(color: _grey600, fontSize: 14),
+                prefixIcon: const Icon(Icons.search_rounded, color: _purple),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
             ),
           ),
         ],
@@ -256,6 +297,22 @@ class _EducationCard extends StatelessWidget {
                           );
                         },
                       ),
+                      // Play icon overlay for video
+                      if (education.type == 'video')
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.play_arrow_rounded,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ),
                       // Gradient overlay at bottom
                       Positioned(
                         bottom: 0,

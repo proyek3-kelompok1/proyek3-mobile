@@ -17,8 +17,11 @@ class ApiConstants {
   static const String resendOtp = "$baseUrl/auth/resend-otp";
   static const String aiHistory = "$baseUrl/ai/history";
   static const String aiChat = "$baseUrl/ai/chat";
+  static const String aiDeleteHistory = "$baseUrl/ai/history/delete";
   static const String profile = "$baseUrl/user";
   static const String updateProfile = "$baseUrl/user/profile";
   static const String updateFcmToken = "$baseUrl/user/fcm-token";
   static const String logout = "$baseUrl/logout";
 }
+
+

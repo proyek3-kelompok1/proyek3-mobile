@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'features/home/home_page.dart';
+import 'features/home/doctor_home_page.dart';
 import 'features/profile/profile_screen.dart';
 import 'navbar/curved_navigation_bar.dart';
 import 'features/ai/ai_chat_page.dart';
+import 'core/services/auth_api.dart';
 
 class NavBarPage extends StatefulWidget {
   const NavBarPage({super.key});
@@ -13,18 +16,39 @@ class NavBarPage extends StatefulWidget {
 
 class _NavBarPageState extends State<NavBarPage> {
   int _selectedIndex = 0;
+  bool _isDoctor = false;
+  bool _isLoading = true;
 
-  final List<Widget> _pages = [
-    const HomeScreen(),
-    const AiChatPage(),
-    const ProfileScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _checkRole();
+    // Sync FCM Token
+    AuthApi().syncFcmToken();
+  }
+
+  Future<void> _checkRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDoctor = prefs.getString('user_role') == 'doctor';
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_selectedIndex],
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
+    final List<Widget> pages = [
+      _isDoctor ? const DoctorHomePage() : const HomeScreen(),
+      const AiChatPage(),
+      const ProfileScreen(),
+    ];
+
+    return Scaffold(
+      body: pages[_selectedIndex],
       bottomNavigationBar: CurvedNavigationBar(
         index: _selectedIndex,
         backgroundColor: Colors.white,

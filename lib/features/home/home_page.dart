@@ -16,12 +16,18 @@ import 'package:dvpets/features/booking/queue_list_page.dart';
 import 'package:dvpets/features/booking/medical_record_list_page.dart';
 import 'package:dvpets/core/services/notification_service.dart';
 import 'package:dvpets/core/widgets/shimmer_loading.dart';
+import 'package:dvpets/features/notification/notification_list_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:dvpets/models/consultation_model.dart';
+import 'package:dvpets/core/services/consultation_api.dart';
+import 'package:dvpets/features/consultation/chat_page.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(vertical: 16),
@@ -34,6 +40,8 @@ class HomeScreen extends StatelessWidget {
               SizedBox(height: 20),
               BookingHistory(),
               SizedBox(height: 20),
+              ActiveConsultations(),
+              SizedBox(height: 20),
             ],
           ),
         ),
@@ -42,8 +50,32 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends StatefulWidget {
   const HomeHeader({Key? key}) : super(key: key);
+
+  @override
+  State<HomeHeader> createState() => _HomeHeaderState();
+}
+
+class _HomeHeaderState extends State<HomeHeader> {
+  String _userName = "User";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userDataString = prefs.getString('user_data');
+    if (userDataString != null) {
+      final userData = jsonDecode(userDataString);
+      setState(() {
+        _userName = userData['name'] ?? "User";
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +84,45 @@ class HomeHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Expanded(child: SearchField()),
-          const SizedBox(width: 16),
-          IconBtnWithCounter(svgSrc: bellIcon, numOfitem: 3, press: () {}),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Halo, $_userName! 🐾",
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF4A1059),
+                  ),
+                ),
+                Text(
+                  "Semoga harimu menyenangkan",
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ValueListenableBuilder<List<AppNotification>>(
+            valueListenable: NotificationService().notificationsNotifier,
+            builder: (context, notifications, child) {
+              final unreadCount = notifications.where((n) => !n.isRead).length;
+              return IconBtnWithCounter(
+                svgSrc: bellIcon,
+                numOfitem: unreadCount,
+                press: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificationListPage()),
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -228,7 +296,7 @@ class Categories extends StatelessWidget {
     final List<Map<String, dynamic>> categories = [
       {
         "icon": bookingIcon,
-        "text": "Booking",
+        "text": "Antrian",
         "page": const BookingPage(),
       },
       {
@@ -354,7 +422,7 @@ class _SpecialOffersState extends State<SpecialOffers> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SectionTitle(
-                title: "Education",
+                title: "Edukasi",
                 press: () {
                   Navigator.push(
                     context,
@@ -376,6 +444,7 @@ class _SpecialOffersState extends State<SpecialOffers> {
                       image: edu.thumbnailUrl,
                       category: edu.title,
                       viewCount: edu.view,
+                      type: edu.type,
                       press: () {
                         Navigator.push(
                           context,
@@ -403,10 +472,12 @@ class SpecialOfferCard extends StatelessWidget {
     required this.category,
     required this.image,
     required this.viewCount,
+    this.type,
     required this.press,
   }) : super(key: key);
 
   final String category, image;
+  final String? type;
   final int viewCount;
   final GestureTapCallback press;
 
@@ -436,6 +507,7 @@ class SpecialOfferCard extends StatelessWidget {
                     );
                   },
                 ),
+                // Gradient shadow to make text readable
                 Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -450,7 +522,22 @@ class SpecialOfferCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Padding(
+                if (type == 'video')
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 15,
                     vertical: 10,
@@ -609,7 +696,7 @@ class _BookingHistoryState extends State<BookingHistory> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Riwayat Booking",
+                  "Riwayat Antrian",
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1015,6 +1102,15 @@ class _BookingCard extends StatelessWidget {
 // </svg>
 // ''';
 
+const aiIcon = '''
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="6" y="8" width="12" height="8" rx="2" stroke="#4A3298" stroke-width="2"/>
+<circle cx="9" cy="12" r="1.5" fill="#4A3298"/>
+<circle cx="15" cy="12" r="1.5" fill="#4A3298"/>
+<path d="M12 4V6" stroke="#4A3298" stroke-width="2" stroke-linecap="round"/>
+</svg>
+''';
+
 const bellIcon =
     '''<svg width="15" height="20" viewBox="0 0 15 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M13.9645 15.8912C13.9645 16.1628 13.7495 16.3832 13.4844 16.3832H9.22765H9.21987H1.51477C1.2505 16.3832 1.03633 16.1628 1.03633 15.8912V10.7327C1.03633 7.08053 3.93546 4.10885 7.50043 4.10885C11.0645 4.10885 13.9645 7.08053 13.9645 10.7327V15.8912ZM7.50043 18.9381C6.77414 18.9381 6.18343 18.3327 6.18343 17.5885C6.18343 17.5398 6.18602 17.492 6.19034 17.4442H8.81052C8.81484 17.492 8.81743 17.5398 8.81743 17.5885C8.81743 18.3327 8.22586 18.9381 7.50043 18.9381ZM9.12488 3.2292C9.35805 2.89469 9.49537 2.48673 9.49537 2.04425C9.49537 0.915044 8.6024 0 7.50043 0C6.39847 0 5.5055 0.915044 5.5055 2.04425C5.5055 2.48673 5.64281 2.89469 5.87512 3.2292C2.51828 3.99204 0 7.06549 0 10.7327V15.8912C0 16.7478 0.679659 17.4442 1.51477 17.4442H5.15142C5.14883 17.492 5.1471 17.5398 5.1471 17.5885C5.1471 18.9186 6.20243 20 7.50043 20C8.79843 20 9.8529 18.9186 9.8529 17.5885C9.8529 17.5398 9.85117 17.492 9.84858 17.4442H13.4844C14.3203 17.4442 15 16.7478 15 15.8912V10.7327C15 7.06549 12.4826 3.99204 9.12488 3.2292Z" fill="#626262"/>
@@ -1030,10 +1126,12 @@ stroke="#FF7643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 
 const consultationIcon = '''
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M9 12H15M12 9V15M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
-stroke="#FF7643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="12" cy="7" r="4" stroke="#FF7643" stroke-width="2"/>
+<path d="M5 21C5 17.134 8.13401 14 12 14C15.866 14 19 17.134 19 21" stroke="#FF7643" stroke-width="2" stroke-linecap="round"/>
+<path d="M11 17H13M12 16V18" stroke="#FF7643" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 ''';
+
 
 const vaccineIcon = '''
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1066,3 +1164,193 @@ const petShopIcon = '''
 <path d="M8 16C8 14 10 13 12 13C14 13 16 14 16 16C16 18 14 19 12 19C10 19 8 18 8 16Z" fill="#FF7643"/>
 </svg>
 ''';
+
+class ActiveConsultations extends StatefulWidget {
+  const ActiveConsultations({super.key});
+
+  @override
+  State<ActiveConsultations> createState() => _ActiveConsultationsState();
+}
+
+class _ActiveConsultationsState extends State<ActiveConsultations> {
+  late Future<List<ConsultationModel>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = ConsultationApi.fetchSessions();
+  }
+
+  String _formatTime(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+    } catch (_) {
+      return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const purple = Color(0xFF4A3298);
+    const purpleBg = Color(0xFFF3EEFF);
+
+    return FutureBuilder<List<ConsultationModel>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        
+        final sessions = snapshot.data ?? [];
+        if (sessions.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SectionTitle(
+                title: "Konsultasi Aktif",
+                press: () {
+                   Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DoctorListPage()),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              ...sessions.map((session) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatPage(
+                            session: session,
+                            isDoctor: false,
+                          ),
+                        ),
+                      ).then((_) => setState(() {
+                        _future = ConsultationApi.fetchSessions();
+                      }));
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 28,
+                                backgroundColor: purple.withOpacity(0.1),
+                                backgroundImage: session.userAvatar != null ? NetworkImage(session.userAvatar!) : null,
+                                child: session.userAvatar == null ? const Icon(Icons.person, color: purple) : null,
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: session.isOnline ? Colors.green : Colors.grey,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Dr. ${session.userName}",
+                                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15),
+                                    ),
+                                    if (session.updatedAt != null)
+                                      Text(
+                                        _formatTime(session.updatedAt!),
+                                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (session.lastMessage != null) ...[
+                                      _buildStatusTicks(session.lastMessageStatus),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Expanded(
+                                      child: Text(
+                                        session.lastMessage ?? "Mulai chat sekarang",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12, 
+                                          color: session.unreadCount > 0 ? Colors.black87 : Colors.grey[600],
+                                          fontWeight: session.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                    if (session.unreadCount > 0)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: purple,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          session.unreadCount.toString(),
+                                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              )).toList(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusTicks(String? status) {
+    if (status == 'read') {
+      return const Icon(Icons.done_all, color: Colors.blue, size: 14);
+    } else if (status == 'sent') {
+      return const Icon(Icons.done, color: Colors.grey, size: 14);
+    }
+    return const SizedBox.shrink();
+  }
+}

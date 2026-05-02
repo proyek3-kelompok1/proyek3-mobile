@@ -14,22 +14,25 @@ class PrivacyPolicyScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120.0,
+            expandedHeight: 200.0,
             floating: false,
             pinned: true,
             elevation: 0,
+            centerTitle: true,
             backgroundColor: primaryColor,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
               title: Text(
                 "Kebijakan Privasi",
                 style: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
                   fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
                 ),
               ),
               background: Container(
@@ -40,12 +43,19 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     colors: [primaryColor, secondaryColor],
                   ),
                 ),
+                child: Center(
+                  child: Icon(
+                    Icons.security_rounded,
+                    size: 90,
+                    color: Colors.white.withOpacity(0.15),
+                  ),
+                ),
               ),
             ),
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -84,19 +94,33 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Text(
-                          "Terakhir diperbarui: 27 April 2026",
+                          "Terakhir diperbarui: 30 April 2026",
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: Colors.grey[500],
                             fontStyle: FontStyle.italic,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        const Icon(Icons.security_outlined, color: Colors.grey, size: 24),
+                        const SizedBox(height: 25),
+                        Container(
+                          padding: const EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: primaryColor.withOpacity(0.1),
+                                blurRadius: 15,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.shield_rounded, color: primaryColor, size: 28),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 50),
                 ],
               ),
             ),
@@ -108,16 +132,21 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
   Widget _buildSection(int index, String title, String content) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 25),
+      padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.01),
+            blurRadius: 1,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -127,26 +156,35 @@ class PrivacyPolicyScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4A1059).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4A1059), Color(0xFF8E24AA)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4A1059).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Text(
-                  index.toString(),
+                  index.toString().padLeft(2, '0'),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF4A1059),
+                    color: Colors.white,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 18),
               Expanded(
                 child: Text(
                   title,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF2D3142),
                   ),
@@ -154,13 +192,13 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           Text(
             content,
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.grey[700],
-              height: 1.6,
+              color: Colors.grey[600],
+              height: 1.8,
             ),
             textAlign: TextAlign.justify,
           ),
