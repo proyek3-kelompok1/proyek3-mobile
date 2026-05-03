@@ -47,23 +47,39 @@ class _NavBarPageState extends State<NavBarPage> {
       const ProfileScreen(),
     ];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).primaryColor;
+
     return Scaffold(
       body: pages[_selectedIndex],
-      bottomNavigationBar: CurvedNavigationBar(
-        index: _selectedIndex,
-        backgroundColor: Colors.white,
-        color: const Color(0xFF4A1059),
-        buttonBackgroundColor: const Color(0xFF4A1059),
-        items: const [
-          Icon(Icons.home, size: 30, color: Colors.white),
-          Icon(Icons.smart_toy_rounded, size: 30, color: Colors.white),
-          Icon(Icons.person, size: 30, color: Colors.white),
-        ],
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+              blurRadius: 15,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: CurvedNavigationBar(
+          index: _selectedIndex,
+          height: 65,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          color: isDark ? const Color(0xFF1E1E2C) : primary,
+          buttonBackgroundColor: isDark ? const Color(0xFFC05DE3) : primary,
+          animationDuration: const Duration(milliseconds: 300),
+          items: const [
+            Icon(Icons.home_rounded, size: 32, color: Colors.white),
+            Icon(Icons.pets_rounded, size: 32, color: Colors.white), // DokterPaw icon!
+            Icon(Icons.person_rounded, size: 32, color: Colors.white),
+          ],
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+        ),
       ),
     );
   }

@@ -204,7 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: const Color(0xFF4A1059).withOpacity(0.08),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(icon, color: const Color(0xFF4A1059), size: 24),
+            child: Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF4A1059), size: 24),
           ),
           const SizedBox(width: 18),
           Expanded(
@@ -263,7 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: const Color(0xFF4A1059).withOpacity(0.08),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(icon, color: const Color(0xFF4A1059), size: 24),
+              child: Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF4A1059), size: 24),
             ),
             const SizedBox(width: 18),
             Expanded(

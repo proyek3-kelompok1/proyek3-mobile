@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import '../../../models/education_model.dart';
+import '../../../core/providers/settings_provider.dart';
+import '../services/education_services.dart';
 
 // ──────────────────────────────────────────────────────────
 //  COLOUR PALETTE  (purple + white dominant)
@@ -16,7 +19,7 @@ const _grey100 = Color(0xFFF5F5F5);
 const _grey300 = Color(0xFFE0E0E0);
 const _grey600 = Color(0xFF757575);
 
-class EducationDetailPage extends StatelessWidget {
+class EducationDetailPage extends StatefulWidget {
   final Education education;
 
   const EducationDetailPage({
@@ -25,9 +28,27 @@ class EducationDetailPage extends StatelessWidget {
   });
 
   @override
+  State<EducationDetailPage> createState() => _EducationDetailPageState();
+}
+
+class _EducationDetailPageState extends State<EducationDetailPage> {
+  final EducationService _service = EducationService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Memanggil API untuk menambah jumlah pembaca (view count)
+    _service.incrementView(widget.education.id);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final education = widget.education;
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final isDark = settingsProvider.isDarkMode;
+
     return Scaffold(
-      backgroundColor: _white,
+      backgroundColor: isDark ? const Color(0xFF13131C) : _white,
       body: CustomScrollView(
         slivers: [
           // ── HERO IMAGE + APPBAR ──────────────────────────
@@ -60,11 +81,7 @@ class EducationDetailPage extends StatelessWidget {
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [_purpleDark, _purple, _purpleLight],
-                          ),
+                          color: _purple,
                         ),
                         child: const Center(
                           child: Icon(Icons.article_rounded,
@@ -75,18 +92,9 @@ class EducationDetailPage extends StatelessWidget {
                   ),
                   // Gradient overlay
                   Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.2),
-                          Colors.black.withOpacity(0.7),
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.25),
                       ),
-                    ),
                   ),
                   // Play Button Overlay for Video
                   if (education.type == 'video' && education.videoUrl != null)
@@ -95,10 +103,8 @@ class EducationDetailPage extends StatelessWidget {
                         onTap: () async {
                           final url = Uri.parse(education.videoUrl!);
                           try {
-                            // Coba buka di aplikasi luar (YouTube App)
                             await launchUrl(url, mode: LaunchMode.externalApplication);
                           } catch (e) {
-                            // Fallback kalau gagal, buka di browser biasa
                             await launchUrl(url);
                           }
                         },
@@ -132,22 +138,20 @@ class EducationDetailPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Badges
                         Row(
                           children: [
                             _Badge(
-                              text: education.category,
+                              text: settingsProvider.translate(education.category.toLowerCase().contains('tips') ? 'tips' : education.category.toLowerCase().contains('berita') ? 'news' : 'article'),
                               color: _purple,
                             ),
                             const SizedBox(width: 8),
                             _Badge(
-                              text: education.type,
+                              text: settingsProvider.translate(education.type.toLowerCase() == 'video' ? 'video' : 'article'),
                               color: _purpleLight,
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // Title
                         Text(
                           education.title,
                           style: GoogleFonts.poppins(
@@ -177,7 +181,7 @@ class EducationDetailPage extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
-                    color: _purpleBg,
+                    color: isDark ? const Color(0xFF1E1E2C) : _purpleBg,
                     border: Border(
                       bottom: BorderSide(
                         color: _purpleAccent.withOpacity(0.3),
@@ -187,29 +191,28 @@ class EducationDetailPage extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      // View count
                       _MetaChip(
                         icon: Icons.visibility_rounded,
-                        text: "${education.view} kali dibaca",
+                        text: settingsProvider.translate('times_read').replaceAll('{count}', education.view.toString()),
+                        isDark: isDark,
                       ),
                       const SizedBox(width: 16),
-                      // Reading time
                       if (education.readingTime != null)
                         _MetaChip(
                           icon: Icons.schedule_rounded,
-                          text: education.readingTime!,
+                          text: education.readingTime!.replaceAll('menit', settingsProvider.translate('minutes_read')).replaceAll('min read', settingsProvider.translate('minutes_read')),
+                          isDark: isDark,
                         ),
                       const Spacer(),
-                      // Level
                       if (education.level != null)
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _purple.withOpacity(0.1),
+                            color: isDark ? _purple.withOpacity(0.2) : _purple.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: _purpleAccent.withOpacity(0.5),
+                              color: isDark ? Colors.white12 : _purpleAccent.withOpacity(0.5),
                             ),
                           ),
                           child: Row(
@@ -219,11 +222,11 @@ class EducationDetailPage extends StatelessWidget {
                                   color: _purple, size: 14),
                               const SizedBox(width: 4),
                               Text(
-                                education.level!,
+                                settingsProvider.translate(education.level!.toLowerCase().contains('pemula') ? 'beginner' : education.level!.toLowerCase().contains('menengah') ? 'intermediate' : 'advanced'),
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: _purple,
+                                  color: isDark ? Colors.white : _purple,
                                 ),
                               ),
                             ],
@@ -241,10 +244,10 @@ class EducationDetailPage extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: _purpleBg.withOpacity(0.5),
+                        color: isDark ? const Color(0xFF1E1E2C) : _purpleBg.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: _purpleAccent.withOpacity(0.3),
+                          color: isDark ? Colors.white12 : _purpleAccent.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
@@ -265,7 +268,7 @@ class EducationDetailPage extends StatelessWidget {
                               education.description!,
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
-                                color: _grey600,
+                                color: isDark ? Colors.white70 : _grey600,
                                 height: 1.6,
                               ),
                             ),
@@ -290,7 +293,7 @@ class EducationDetailPage extends StatelessWidget {
                       },
                       icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.white),
                       label: Text(
-                        "Tonton Video di YouTube",
+                        settingsProvider.translate('watch_on_youtube'),
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
@@ -323,11 +326,11 @@ class EducationDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        "Konten Artikel",
+                        settingsProvider.translate('article_content'),
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: _purpleDark,
+                          color: isDark ? Colors.white : _purpleDark,
                         ),
                       ),
                     ],
@@ -338,15 +341,7 @@ class EducationDetailPage extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                   child: Container(
                     height: 1,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          _purple.withOpacity(0.3),
-                          _purpleAccent.withOpacity(0.1),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
+                    color: _purple.withOpacity(0.2),
                   ),
                 ),
 
@@ -356,8 +351,9 @@ class EducationDetailPage extends StatelessWidget {
                     education.content,
                     style: GoogleFonts.poppins(
                       fontSize: 15,
-                      color: const Color(0xFF333333),
                       height: 1.8,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
@@ -369,7 +365,7 @@ class EducationDetailPage extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: _grey100,
+                        color: isDark ? const Color(0xFF1E1E2C) : _grey100,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
@@ -378,10 +374,10 @@ class EducationDetailPage extends StatelessWidget {
                               color: _grey600, size: 16),
                           const SizedBox(width: 8),
                           Text(
-                            "Dipublikasikan: ${education.formattedDate}",
+                            settingsProvider.translate('published_at').replaceAll('{date}', education.formattedDate!),
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: _grey600,
+                              color: isDark ? Colors.white60 : _grey600,
                             ),
                           ),
                         ],
@@ -432,21 +428,22 @@ class _Badge extends StatelessWidget {
 class _MetaChip extends StatelessWidget {
   final IconData icon;
   final String text;
+  final bool isDark;
 
-  const _MetaChip({required this.icon, required this.text});
+  const _MetaChip({required this.icon, required this.text, this.isDark = false});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: _purple, size: 16),
+        Icon(icon, color: isDark ? _purpleAccent : _purple, size: 16),
         const SizedBox(width: 4),
         Text(
           text,
           style: GoogleFonts.poppins(
             fontSize: 12,
-            color: _purpleDark,
+            color: isDark ? Colors.white70 : _purpleDark,
             fontWeight: FontWeight.w500,
           ),
         ),

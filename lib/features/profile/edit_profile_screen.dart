@@ -379,7 +379,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             fontSize: 13,
             fontWeight: FontWeight.w400,
           ),
-          prefixIcon: Icon(icon, color: const Color(0xFF4A1059), size: 20),
+          prefixIcon: Icon(icon, color: isDark ? Colors.white : const Color(0xFF4A1059), size: 20),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
             borderSide: BorderSide.none,

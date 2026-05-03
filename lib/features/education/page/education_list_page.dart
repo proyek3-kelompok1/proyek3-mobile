@@ -4,6 +4,8 @@ import '../services/education_services.dart';
 import '../../../models/education_model.dart';
 import 'education_detail_page.dart';
 import '../../../core/widgets/shimmer_loading.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/settings_provider.dart';
 
 // ──────────────────────────────────────────────────────────
 //  COLOUR PALETTE
@@ -18,7 +20,8 @@ const _grey300 = Color(0xFFE0E0E0);
 const _grey600 = Color(0xFF757575);
 
 class EducationListPage extends StatefulWidget {
-  const EducationListPage({super.key});
+  final bool isDoctorView;
+  const EducationListPage({super.key, this.isDoctorView = false});
 
   @override
   State<EducationListPage> createState() => _EducationListPageState();
@@ -68,8 +71,12 @@ class _EducationListPageState extends State<EducationListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: _purpleBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // ── HEADER ──────────────────────────────────────
@@ -94,11 +101,11 @@ class _EducationListPageState extends State<EducationListPage> {
                               color: _purpleAccent, size: 48),
                           const SizedBox(height: 12),
                           Text(
-                            "Gagal memuat data",
+                            settingsProvider.translate('profile_update_failed'),
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: _purpleDark,
+                            color: theme.colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -107,7 +114,7 @@ class _EducationListPageState extends State<EducationListPage> {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: _grey600,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                         ],
@@ -146,93 +153,108 @@ class _EducationListPageState extends State<EducationListPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 12,
+        top: widget.isDoctorView ? 10 : MediaQuery.of(context).padding.top + 12,
         left: 20,
         right: 20,
-        bottom: 20,
+        bottom: widget.isDoctorView ? 15 : 20,
       ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_purpleDark, _purple, _purpleLight],
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
+      decoration: BoxDecoration(
+        color: widget.isDoctorView ? Colors.transparent : (isDark ? const Color(0xFF13131C) : _purple),
+        borderRadius: widget.isDoctorView 
+          ? null 
+          : const BorderRadius.only(
+              bottomLeft: Radius.circular(28),
+              bottomRight: Radius.circular(28),
+            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              // Back button
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: _white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: _white,
-                    size: 22,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              // Title
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Edukasi",
-                      style: GoogleFonts.poppins(
+          if (!widget.isDoctorView)
+            Row(
+              children: [
+                // Back button
+                if (!widget.isDoctorView)
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: _white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_rounded,
                         color: _white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
+                        size: 22,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "Pelajari lebih lanjut tentang hewan peliharaan",
-                      style: GoogleFonts.poppins(
-                        color: _white.withOpacity(0.75),
-                        fontSize: 12,
+                  ),
+                if (!widget.isDoctorView) const SizedBox(width: 14),
+                // Title
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        settingsProvider.translate('education_title'),
+                        style: GoogleFonts.poppins(
+                          color: _white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        settingsProvider.translate('education_desc'),
+                        style: GoogleFonts.poppins(
+                          color: _white.withOpacity(0.75),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
+              ],
+            ),
+          if (!widget.isDoctorView) const SizedBox(height: 20),
           // Search Bar
           Container(
             decoration: BoxDecoration(
-              color: _white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withOpacity(widget.isDoctorView ? 0.05 : 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
+              border: widget.isDoctorView 
+                ? Border.all(color: isDark ? Colors.white10 : Colors.grey[100]!) 
+                : null,
             ),
             child: TextField(
               onChanged: _onSearchChanged,
               style: GoogleFonts.poppins(fontSize: 14),
               decoration: InputDecoration(
-                hintText: "Cari tutorial atau video...",
-                hintStyle: GoogleFonts.poppins(color: _grey600, fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded, color: _purple),
+                hintText: settingsProvider.translate('search_placeholder'),
+                hintStyle: GoogleFonts.poppins(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), 
+                  fontSize: 14),
+                prefixIcon: Icon(Icons.search_rounded, color: Theme.of(context).primaryColor),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -255,13 +277,15 @@ class _EducationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            color: _white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
@@ -313,7 +337,7 @@ class _EducationCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                      // Gradient overlay at bottom
+                      // Shadow overlay at bottom (REMOVED Gradient for clean look)
                       Positioned(
                         bottom: 0,
                         left: 0,
@@ -321,14 +345,7 @@ class _EducationCard extends StatelessWidget {
                         child: Container(
                           height: 60,
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.4),
-                              ],
-                            ),
+                            color: Colors.black.withOpacity(0.15), // Subtle solid overlay
                           ),
                         ),
                       ),
@@ -339,12 +356,12 @@ class _EducationCard extends StatelessWidget {
                         child: Row(
                           children: [
                             _SmallBadge(
-                              text: education.category,
+                              text: settingsProvider.translate(education.category.toLowerCase().contains('tips') ? 'tips' : education.category.toLowerCase().contains('berita') ? 'news' : 'article'),
                               color: _purple,
                             ),
                             const SizedBox(width: 6),
                             _SmallBadge(
-                              text: education.type,
+                              text: settingsProvider.translate(education.type.toLowerCase() == 'video' ? 'video' : 'article'),
                               color: _purpleLight,
                             ),
                           ],
@@ -395,7 +412,7 @@ class _EducationCard extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: _purpleDark,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -406,7 +423,7 @@ class _EducationCard extends StatelessWidget {
                         education.description!,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: _grey600,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           height: 1.4,
                         ),
                         maxLines: 2,
@@ -421,7 +438,7 @@ class _EducationCard extends StatelessWidget {
                               color: _purpleLight, size: 14),
                           const SizedBox(width: 4),
                           Text(
-                            education.level!,
+                            settingsProvider.translate(education.level!.toLowerCase().contains('pemula') ? 'beginner' : education.level!.toLowerCase().contains('menengah') ? 'intermediate' : 'advanced'),
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: _grey600,
@@ -435,7 +452,7 @@ class _EducationCard extends StatelessWidget {
                               color: _purpleLight, size: 14),
                           const SizedBox(width: 4),
                           Text(
-                            education.readingTime!,
+                            education.readingTime!.replaceAll('menit', settingsProvider.translate('minutes_read')).replaceAll('min read', settingsProvider.translate('minutes_read')),
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: _grey600,
@@ -455,7 +472,7 @@ class _EducationCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                "Baca",
+                                settingsProvider.translate('read'),
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   color: _purple,

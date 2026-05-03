@@ -89,13 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   height: 220,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isDark 
-                        ? [const Color(0xFF2D1035), const Color(0xFF4A1059)]
-                        : [primaryColor, secondaryColor],
-                    ),
+                    color: isDark ? const Color(0xFF13131C) : primaryColor,
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(50),
                       bottomRight: Radius.circular(50),
@@ -181,14 +175,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.phone_android_rounded, size: 14, color: primaryColor),
+                        Icon(Icons.phone_android_rounded, 
+                          size: 14, 
+                          color: isDark ? Colors.white : theme.primaryColor),
                         const SizedBox(width: 8),
                         Text(
                           _userData!['phone'],
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: primaryColor,
+                            color: isDark ? Colors.white : theme.primaryColor,
                           ),
                         ),
                       ],
@@ -343,7 +339,10 @@ class ProfileMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = isLogout ? const Color(0xFFEA4335) : const Color(0xFF4A1059);
+    final isDark = theme.brightness == Brightness.dark;
+    final color = isLogout 
+        ? const Color(0xFFEA4335) 
+        : (isDark ? Colors.white : theme.primaryColor);
 
     return Material(
       color: Colors.transparent,
@@ -431,7 +430,7 @@ class ProfilePic extends StatelessWidget {
           backgroundColor: theme.brightness == Brightness.dark ? Colors.grey[800] : const Color(0xFFF3EEFF),
           backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
           child: avatarUrl == null 
-              ? const Icon(Icons.person_rounded, size: 85, color: Color(0xFF4A1059))
+              ? Icon(Icons.person_rounded, size: 85, color: theme.primaryColor)
               : null,
         ),
       ),

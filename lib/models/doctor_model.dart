@@ -8,6 +8,7 @@ class DoctorModel {
   final String? description;
   final double rating;
   final int queue;
+  final bool isOnline;
 
   DoctorModel({
     required this.id,
@@ -19,6 +20,7 @@ class DoctorModel {
     this.description,
     required this.rating,
     required this.queue,
+    this.isOnline = false,
   });
 
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class DoctorModel {
       description: json['description'],
       rating: (json['rating'] ?? 0).toDouble(),
       queue: json['queue'] ?? 0,
+      isOnline: json['is_online'] == 1 || json['is_online'] == true || json['is_active'] == 1 || json['is_active'] == true,
     );
   }
 }

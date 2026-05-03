@@ -20,4 +20,16 @@ class EducationService {
       throw Exception("Gagal load data");
     }
   }
+
+  Future<void> incrementView(int id) async {
+    try {
+      // Memanggil endpoint detail untuk men-trigger increment view di backend
+      // Biasanya di Laravel: GET /api/education/{id} akan menambah views++
+      await http.get(
+        Uri.parse("${ApiConstants.education}/$id"),
+      );
+    } catch (e) {
+      print("Error incrementing view: $e");
+    }
+  }
 }

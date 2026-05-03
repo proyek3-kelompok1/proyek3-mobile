@@ -239,16 +239,19 @@ class _QueueListPageState extends State<QueueListPage> with TickerProviderStateM
         right: 20,
         bottom: 20,
       ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_purpleDark, _purple, _purpleLight],
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: _purple,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(28),
           bottomRight: Radius.circular(28),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Row(
         children: [

@@ -1,3 +1,5 @@
+import '../core/constants/api_constants.dart';
+
 class MessageModel {
   final int id;
   final String senderType; // 'user' or 'doctor'

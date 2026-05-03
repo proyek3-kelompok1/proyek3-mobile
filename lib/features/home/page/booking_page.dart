@@ -9,6 +9,8 @@ import '../../../features/booking/booking_success_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../core/widgets/shimmer_loading.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/settings_provider.dart';
 
 const _purple = Color(0xFF4A1059);
 const _purpleDark = Color(0xFF4A1059);
@@ -122,8 +124,9 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
   void _nextStep() {
     if (_currentStep == 0) {
       if (selectedService == null) {
+        final sp = Provider.of<SettingsProvider>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Pilih layanan terlebih dahulu"),
+          content: Text(sp.translate('select_service_first')),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -211,11 +214,16 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final sp = Provider.of<SettingsProvider>(context);
+    final isDark = sp.isDarkMode;
+
     if (loading) {
       return Scaffold(
-        backgroundColor: _purpleBg,
+        backgroundColor: isDark ? const Color(0xFF13131C) : _purpleBg,
         appBar: AppBar(
-          title: Text("Booking Layanan", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          title: Text(sp.translate('booking_service_title'),
+              style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold, color: Colors.white)),
           backgroundColor: _purple,
           elevation: 0,
         ),
@@ -223,25 +231,31 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
       );
     }
     return Scaffold(
-      backgroundColor: _purpleBg,
-      body: Column(children: [
-        _buildHeader(),
-        _buildStepIndicator(),
-        Expanded(
-          child: PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [_buildStep1(), _buildStep2(), _buildStep3()],
+      backgroundColor: isDark ? const Color(0xFF13131C) : _purpleBg,
+      body: Column(
+        children: [
+          _buildHeader(sp),
+          _buildStepIndicator(sp),
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildStep1(sp),
+                _buildStep2(sp),
+                _buildStep3(sp),
+              ],
+            ),
           ),
-        ),
-        _buildBottomButtons(),
-      ]),
+          _buildBottomButtons(sp),
+        ],
+      ),
     );
   }
 
-  Widget _buildHeader() {
-    final titles = ["Pilih Layanan", "Dokter & Jadwal", "Data Pemilik & Hewan"];
-    final subtitles = ["Pilih layanan untuk hewan Anda", "Tentukan dokter dan jadwal kunjungan", "Lengkapi data pemilik dan hewan"];
+  Widget _buildHeader(SettingsProvider sp) {
+    final titles = [sp.translate('step_service'), sp.translate('step_schedule'), sp.translate('step_data')];
+    final subtitles = [sp.translate('step_service_desc'), sp.translate('step_schedule_desc'), sp.translate('step_data_desc')];
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 12, left: 20, right: 20, bottom: 16),
@@ -274,28 +288,29 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildStepIndicator() {
-    final labels = ["Layanan", "Jadwal", "Data"];
+  Widget _buildStepIndicator(SettingsProvider sp) {
+    final labels = [sp.translate('label_service'), sp.translate('label_schedule'), sp.translate('label_data')];
+    final isDark = sp.isDarkMode;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(children: List.generate(3, (i) {
         final isActive = i <= _currentStep;
         final isCurrent = i == _currentStep;
         return Expanded(child: Row(children: [
-          if (i > 0) Expanded(child: Container(height: 2.5, decoration: BoxDecoration(color: isActive ? _purple : _grey300, borderRadius: BorderRadius.circular(2)))),
+          if (i > 0) Expanded(child: Container(height: 2.5, decoration: BoxDecoration(color: isActive ? _purple : (isDark ? Colors.white24 : _grey300), borderRadius: BorderRadius.circular(2)))),
           Column(mainAxisSize: MainAxisSize.min, children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 350),
               width: isCurrent ? 38 : 30, height: isCurrent ? 38 : 30,
               decoration: BoxDecoration(
-                color: isActive ? _purple : _white, shape: BoxShape.circle,
-                border: Border.all(color: isActive ? _purple : _grey300, width: 2),
+                color: isActive ? _purple : (isDark ? const Color(0xFF1E1E2C) : _white), shape: BoxShape.circle,
+                border: Border.all(color: isActive ? _purple : (isDark ? Colors.white24 : _grey300), width: 2),
                 boxShadow: isCurrent ? [BoxShadow(color: _purple.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 3))] : [],
               ),
-              child: Center(child: Text("${i + 1}", style: GoogleFonts.poppins(color: isActive ? _white : _grey600, fontSize: isCurrent ? 14 : 12, fontWeight: FontWeight.w700))),
+              child: Center(child: Text("${i + 1}", style: GoogleFonts.poppins(color: isActive ? _white : (isDark ? Colors.white70 : _grey600), fontSize: isCurrent ? 14 : 12, fontWeight: FontWeight.w700))),
             ),
             const SizedBox(height: 4),
-            Text(labels[i], style: GoogleFonts.poppins(fontSize: 9, fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400, color: isActive ? _purple : _grey600)),
+            Text(labels[i], style: GoogleFonts.poppins(fontSize: 9, fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400, color: isActive ? _purple : (isDark ? Colors.white54 : _grey600))),
           ]),
         ]));
       })),
@@ -303,7 +318,8 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
   }
 
   // ── STEP 1: Pilih Layanan ──
-  Widget _buildStep1() {
+  Widget _buildStep1(SettingsProvider sp) {
+    final isDark = sp.isDarkMode;
     final filtered = selectedCategory == "Semua"
         ? services
         : services.where((s) => s.serviceTypeLabel.toLowerCase().contains(selectedCategory.toLowerCase())).toList();
@@ -323,12 +339,12 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
                 duration: const Duration(milliseconds: 250),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: isActive ? _purple : _white,
+                  color: isActive ? _purple : (isDark ? const Color(0xFF1E1E2C) : _white),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: isActive ? _purple : _grey300),
+                  border: Border.all(color: isActive ? _purple : (isDark ? Colors.white24 : _grey300)),
                 ),
                 alignment: Alignment.center,
-                child: Text(categories[i], style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? _white : _grey600)),
+                child: Text(categories[i], style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? _white : (isDark ? Colors.white70 : _grey600))),
               ),
             );
           },
@@ -337,27 +353,28 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
       const SizedBox(height: 12),
       Expanded(
         child: filtered.isEmpty
-            ? Center(child: Text("Tidak ada layanan", style: GoogleFonts.poppins(color: _grey600)))
+            ? Center(child: Text(sp.translate('no_service_found'), style: GoogleFonts.poppins(color: isDark ? Colors.white54 : _grey600)))
             : GridView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72),
                 itemCount: filtered.length,
-                itemBuilder: (_, i) => _buildServiceCard(filtered[i]),
+                itemBuilder: (_, i) => _buildServiceCard(filtered[i], sp),
               ),
       ),
     ]);
   }
 
-  Widget _buildServiceCard(ServiceModel svc) {
+  Widget _buildServiceCard(ServiceModel svc, SettingsProvider sp) {
     final isSelected = selectedService?.id == svc.id;
+    final isDark = sp.isDarkMode;
     return GestureDetector(
-      onTap: () => _showServiceDetail(svc),
+      onTap: () => _showServiceDetail(svc, sp),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         decoration: BoxDecoration(
-          color: _white,
+          color: isDark ? const Color(0xFF1E1E2C) : _white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: isSelected ? _purple : _grey300, width: isSelected ? 2 : 1),
+          border: Border.all(color: isSelected ? _purple : (isDark ? Colors.white12 : _grey300), width: isSelected ? 2 : 1),
           boxShadow: [BoxShadow(color: (isSelected ? _purple : Colors.black).withOpacity(isSelected ? 0.12 : 0.04), blurRadius: isSelected ? 12 : 8, offset: const Offset(0, 4))],
         ),
         child: Padding(
@@ -369,9 +386,9 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
               child: Icon(_serviceIcon(svc.serviceType), color: _purple, size: 26),
             ),
             const SizedBox(height: 10),
-            Text(svc.name, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: _purpleDark), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(svc.name, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? Colors.white : _purpleDark), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
-            Expanded(child: Text(svc.description, style: GoogleFonts.poppins(fontSize: 10, color: _grey600), maxLines: 2, overflow: TextOverflow.ellipsis)),
+            Expanded(child: Text(svc.description, style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white54 : _grey600), maxLines: 2, overflow: TextOverflow.ellipsis)),
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -382,7 +399,7 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
             Row(children: [
               Text(svc.formattedPrice, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: _purple)),
               const Spacer(),
-              Text(svc.formattedDuration, style: GoogleFonts.poppins(fontSize: 10, color: _grey600)),
+              Text(svc.formattedDuration, style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white38 : _grey600)),
             ]),
           ]),
         ),
@@ -390,21 +407,22 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     );
   }
 
-  void _showServiceDetail(ServiceModel svc) {
+  void _showServiceDetail(ServiceModel svc, SettingsProvider sp) {
+    final isDark = sp.isDarkMode;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
-        decoration: const BoxDecoration(color: _white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        decoration: BoxDecoration(color: isDark ? const Color(0xFF13131C) : _white, borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(margin: const EdgeInsets.only(top: 12, bottom: 8), width: 48, height: 4, decoration: BoxDecoration(color: _grey300, borderRadius: BorderRadius.circular(2))),
+          Container(margin: const EdgeInsets.only(top: 12, bottom: 8), width: 48, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white24 : _grey300, borderRadius: BorderRadius.circular(2))),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(children: [
-              Expanded(child: Text(svc.name, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _purpleDark))),
-              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: _grey600)),
+              Expanded(child: Text(svc.name, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: isDark ? Colors.white : _purpleDark))),
+              IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : _grey600)),
             ]),
           ),
           Flexible(
@@ -419,7 +437,7 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
                   ),
                   const SizedBox(width: 14),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(svc.name, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: _purpleDark)),
+                    Text(svc.name, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _purpleDark)),
                     const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -429,21 +447,21 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
                   ])),
                 ]),
                 const SizedBox(height: 12),
-                Text(svc.description, style: GoogleFonts.poppins(fontSize: 13, color: _grey600)),
+                Text(svc.description, style: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.white70 : _grey600)),
                 const SizedBox(height: 16),
                 Row(children: [
-                  Expanded(child: _infoBox("Harga:", svc.formattedPrice)),
+                  Expanded(child: _infoBox(sp.translate('price_label') + ":", svc.formattedPrice, isDark)),
                   const SizedBox(width: 12),
-                  Expanded(child: _infoBox("Durasi:", svc.formattedDuration)),
+                  Expanded(child: _infoBox(sp.translate('duration_label') + ":", svc.formattedDuration, isDark)),
                 ]),
                 const SizedBox(height: 16),
-                Text("Detail Layanan", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: _purple)),
+                Text(sp.translate('service_detail_title'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? _purpleAccent : _purple)),
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: _purpleBg, borderRadius: BorderRadius.circular(14)),
-                  child: Text(svc.details.isNotEmpty ? svc.details : svc.description, style: GoogleFonts.poppins(fontSize: 12, color: _purpleDark, height: 1.6)),
+                  decoration: BoxDecoration(color: isDark ? _purple.withOpacity(0.1) : _purpleBg, borderRadius: BorderRadius.circular(14)),
+                  child: Text(svc.details.isNotEmpty ? svc.details : svc.description, style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white70 : _purpleDark, height: 1.6)),
                 ),
               ]),
             ),
@@ -454,8 +472,8 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(foregroundColor: _grey600, side: const BorderSide(color: _grey300), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  child: Text("Tutup", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(foregroundColor: isDark ? Colors.white70 : _grey600, side: BorderSide(color: isDark ? Colors.white12 : _grey300), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                  child: Text(sp.translate('close_btn'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -464,7 +482,7 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
                 child: ElevatedButton.icon(
                   onPressed: () { setState(() => selectedService = svc); Navigator.pop(context); _goToStep(1); },
                   icon: const Icon(Icons.calendar_month_rounded, size: 18),
-                  label: Text("Booking Layanan", style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14)),
+                  label: Text(sp.translate('booking_service_title'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14)),
                   style: ElevatedButton.styleFrom(backgroundColor: _purple, foregroundColor: _white, padding: const EdgeInsets.symmetric(vertical: 14), elevation: 3, shadowColor: _purple.withOpacity(0.4), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                 ),
               ),
@@ -475,81 +493,83 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     );
   }
 
-  Widget _infoBox(String label, String value) {
+  Widget _infoBox(String label, String value, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: _purpleBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: _purpleAccent.withOpacity(0.3))),
+      decoration: BoxDecoration(color: isDark ? _purple.withOpacity(0.1) : _purpleBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: _purpleAccent.withOpacity(0.3))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: GoogleFonts.poppins(fontSize: 11, color: _grey600)),
+        Text(label, style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white54 : _grey600)),
         const SizedBox(height: 4),
-        Text(value, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _purple)),
+        Text(value, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: isDark ? _purpleAccent : _purple)),
       ]),
     );
   }
 
   // ── STEP 2: Dokter & Jadwal ──
-  Widget _buildStep2() {
+  Widget _buildStep2(SettingsProvider sp) {
+    final isDark = sp.isDarkMode;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Form(key: _formKeys[1], child: Column(children: [
-        _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _sectionTitle(Icons.person_search_rounded, "Pilih Dokter"),
+        _GlassCard(isDark: isDark, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _sectionTitle(Icons.person_search_rounded, sp.translate('step_schedule'), isDark),
           const SizedBox(height: 6),
-          Text("Dokter yang tersedia disesuaikan dengan layanan yang dipilih", style: GoogleFonts.poppins(fontSize: 10, color: _grey600)),
+          Text(sp.translate('available_doctors_hint'), style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white54 : _grey600)),
           const SizedBox(height: 12),
           _StyledDropdown<DoctorModel>(
-            label: "Pilih Dokter",
+            label: sp.translate('step_schedule'),
             value: selectedDoctor,
-            items: doctors.map((e) => DropdownMenuItem(value: e, child: Text("drh. ${e.name} - ${e.specialization}", style: GoogleFonts.poppins(fontSize: 13)))).toList(),
+            items: doctors.map((e) => DropdownMenuItem(value: e, child: Text("drh. ${e.name} - ${e.specialization}", style: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.white : Colors.black)))).toList(),
             onChanged: (v) => setState(() => selectedDoctor = v),
             icon: Icons.person_search_outlined,
+            isDark: isDark,
           ),
           if (selectedDoctor != null) ...[
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: _purpleBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: _purpleAccent.withOpacity(0.3))),
+              decoration: BoxDecoration(color: isDark ? _purple.withOpacity(0.1) : _purpleBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: _purpleAccent.withOpacity(0.3))),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Icon(Icons.info_outline_rounded, color: _purple, size: 16),
+                  Icon(Icons.info_outline_rounded, color: isDark ? _purpleAccent : _purple, size: 16),
                   const SizedBox(width: 6),
-                  Text("Info Dokter", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: _purple)),
+                  Text("Info Dokter", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? _purpleAccent : _purple)),
                 ]),
                 const SizedBox(height: 8),
-                Text("drh. ${selectedDoctor!.name}", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: _purpleDark)),
+                Text("drh. ${selectedDoctor!.name}", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _purpleDark)),
                 const SizedBox(height: 4),
-                Text("Spesialisasi: ${selectedDoctor!.specialization}", style: GoogleFonts.poppins(fontSize: 12, color: _grey600)),
+                Text("Spesialisasi: ${selectedDoctor!.specialization}", style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white70 : _grey600)),
                 if (selectedDoctor!.schedule != null)
-                  Text("Jadwal: ${selectedDoctor!.schedule}", style: GoogleFonts.poppins(fontSize: 12, color: _grey600, fontWeight: FontWeight.w500)),
+                  Text("Jadwal: ${selectedDoctor!.schedule}", style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white54 : _grey600, fontWeight: FontWeight.w500)),
               ]),
             ),
           ],
         ])),
         const SizedBox(height: 14),
-        _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _sectionTitle(Icons.date_range_rounded, "Tanggal Kunjungan"),
+        _GlassCard(isDark: isDark, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _sectionTitle(Icons.date_range_rounded, sp.translate('visit_date_label'), isDark),
           const SizedBox(height: 12),
           GestureDetector(
             onTap: _pickDate,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(color: _purpleBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: _purpleAccent)),
+              decoration: BoxDecoration(color: isDark ? _purple.withOpacity(0.1) : _purpleBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: _purpleAccent)),
               child: Row(children: [
-                const Icon(Icons.calendar_today_rounded, color: _purple, size: 20),
+                Icon(Icons.calendar_today_rounded, color: isDark ? _purpleAccent : _purple, size: 20),
                 const SizedBox(width: 12),
-                Text("${selectedDate.day.toString().padLeft(2, '0')} / ${selectedDate.month.toString().padLeft(2, '0')} / ${selectedDate.year}", style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: _purpleDark)),
+                Text("${selectedDate.day.toString().padLeft(2, '0')} / ${selectedDate.month.toString().padLeft(2, '0')} / ${selectedDate.year}", style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _purpleDark)),
                 const Spacer(),
-                const Icon(Icons.edit_calendar_rounded, color: _purpleLight, size: 20),
+                Icon(Icons.edit_calendar_rounded, color: isDark ? Colors.white38 : _purpleLight, size: 20),
               ]),
             ),
           ),
           const SizedBox(height: 6),
-          Text("Minimal booking untuk besok hari", style: GoogleFonts.poppins(fontSize: 10, color: Colors.orange.shade700)),
+          Text(sp.translate('min_booking_hint'), style: GoogleFonts.poppins(fontSize: 10, color: Colors.orange.shade700)),
         ])),
         const SizedBox(height: 14),
-        _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _sectionTitle(Icons.schedule_rounded, "Waktu Kunjungan"),
+        _GlassCard(isDark: isDark, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _sectionTitle(Icons.schedule_rounded, sp.translate('visit_time_label'), isDark),
           const SizedBox(height: 12),
           Wrap(spacing: 10, runSpacing: 10, children: times.map((t) {
             final isSelected = selectedTime == t;
@@ -559,12 +579,12 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
                 duration: const Duration(milliseconds: 250),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? _purple : _white,
+                  color: isSelected ? _purple : (isDark ? const Color(0xFF1E1E2C) : _white),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isSelected ? _purple : _grey300, width: 1.5),
+                  border: Border.all(color: isSelected ? _purple : (isDark ? Colors.white12 : _grey300), width: 1.5),
                   boxShadow: isSelected ? [BoxShadow(color: _purple.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))] : [],
                 ),
-                child: Text(t, style: GoogleFonts.poppins(color: isSelected ? _white : _purpleDark, fontWeight: FontWeight.w600, fontSize: 14)),
+                child: Text(t, style: GoogleFonts.poppins(color: isSelected ? _white : (isDark ? Colors.white : _purpleDark), fontWeight: FontWeight.w600, fontSize: 14)),
               ),
             );
           }).toList()),
@@ -574,7 +594,8 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
   }
 
   // ── STEP 3: Data Pemilik & Hewan ──
-  Widget _buildStep3() {
+  Widget _buildStep3(SettingsProvider sp) {
+    final isDark = sp.isDarkMode;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Form(key: _formKeys[2], child: Column(children: [
@@ -583,81 +604,86 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.red.shade50,
+            color: isDark ? Colors.red.withOpacity(0.1) : Colors.red.shade50,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.red.shade200),
+            border: Border.all(color: Colors.red.withOpacity(0.3)),
           ),
           child: Row(children: [
             Icon(Icons.info_outline_rounded, color: Colors.red.shade400, size: 16),
             const SizedBox(width: 8),
             Expanded(child: Text.rich(
               TextSpan(children: [
-                TextSpan(text: "Kolom bertanda ", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700)),
+                TextSpan(text: sp.translate('required_fields_hint').split('*')[0], style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white70 : Colors.grey.shade700)),
                 TextSpan(text: "* ", style: GoogleFonts.poppins(fontSize: 13, color: Colors.red, fontWeight: FontWeight.w700)),
-                TextSpan(text: "wajib diisi", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700)),
+                TextSpan(text: sp.translate('required_fields_hint').split('*')[1], style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white70 : Colors.grey.shade700)),
               ]),
             )),
           ]),
         ),
         const SizedBox(height: 12),
-        _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _sectionTitle(Icons.person_outline_rounded, "Data Pemilik"),
+        _GlassCard(isDark: isDark, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _sectionTitle(Icons.person_outline_rounded, sp.translate('owner_data_title'), isDark),
           const SizedBox(height: 14),
           _StyledTextField(
-            controller: namaPemilik, label: "Nama Lengkap", hint: "Masukkan nama Anda",
+            controller: namaPemilik, label: sp.translate('full_name_label'), hint: sp.translate('enter_name_hint'),
             icon: Icons.badge_outlined, isRequired: true,
-            validator: (v) => (v == null || v.isEmpty) ? "Nama wajib diisi" : null,
+            validator: (v) => (v == null || v.isEmpty) ? sp.translate('name_req') : null,
+            isDark: isDark,
           ),
           const SizedBox(height: 14),
           _StyledTextField(
             controller: email, label: "Email", hint: "contoh@email.com",
             icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, isRequired: true,
-            validator: (v) { if (v == null || v.isEmpty) return "Email wajib diisi"; if (!v.contains('@')) return "Email tidak valid"; return null; },
+            validator: (v) { if (v == null || v.isEmpty) return sp.translate('email_req'); if (!v.contains('@')) return "Email tidak valid"; return null; },
+            isDark: isDark,
           ),
           const SizedBox(height: 14),
           _StyledTextField(
-            controller: telepon, label: "Nomor Telepon", hint: "08xxxxxxxxxx",
+            controller: telepon, label: sp.translate('phone_label'), hint: "08xxxxxxxxxx",
             icon: Icons.phone_outlined, keyboardType: TextInputType.phone, isRequired: true,
-            validator: (v) => (v == null || v.isEmpty) ? "Telepon wajib diisi" : null,
+            validator: (v) => (v == null || v.isEmpty) ? sp.translate('phone_req') : null,
+            isDark: isDark,
           ),
           const SizedBox(height: 14),
           _StyledTextField(
-            controller: alamat, label: "Alamat", hint: "Masukkan alamat lengkap Anda",
+            controller: alamat, label: sp.translate('address_label'), hint: "Masukkan alamat lengkap Anda",
             icon: Icons.location_on_outlined, isRequired: true,
-            validator: (v) => (v == null || v.isEmpty) ? "Alamat wajib diisi" : null,
+            validator: (v) => (v == null || v.isEmpty) ? sp.translate('address_req') : null,
+            isDark: isDark,
           ),
         ])),
         const SizedBox(height: 14),
-        _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _sectionTitle(Icons.pets_rounded, "Data Hewan Peliharaan"),
+        _GlassCard(isDark: isDark, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _sectionTitle(Icons.pets_rounded, sp.translate('pet_data_title'), isDark),
           const SizedBox(height: 14),
           _StyledTextField(
-            controller: namaHewan, label: "Nama Hewan", hint: "Nama panggilan",
+            controller: namaHewan, label: sp.translate('pet_name_label'), hint: sp.translate('pet_name_label'),
             icon: Icons.cruelty_free_outlined, isRequired: true,
-            validator: (v) => (v == null || v.isEmpty) ? "Nama hewan wajib diisi" : null,
+            validator: (v) => (v == null || v.isEmpty) ? sp.translate('pet_name_req') : null,
+            isDark: isDark,
           ),
           const SizedBox(height: 14),
           // Jenis Hewan
-          _RequiredLabel(label: "Jenis Hewan"),
+          _RequiredLabel(label: sp.translate('pet_type_label'), isDark: isDark),
           const SizedBox(height: 8),
-          Row(children: ["Kucing", "Anjing"].map((j) {
-            final isSel = jenisHewan == j;
+          Row(children: [sp.translate('cat_label'), sp.translate('dog_label')].map((j) {
+            final isSel = jenisHewan == (j == sp.translate('cat_label') ? "Kucing" : "Anjing");
             return Expanded(child: Padding(
-              padding: EdgeInsets.only(right: j == "Kucing" ? 6 : 0, left: j == "Anjing" ? 6 : 0),
+              padding: EdgeInsets.only(right: j == sp.translate('cat_label') ? 6 : 0, left: j == sp.translate('dog_label') ? 6 : 0),
               child: GestureDetector(
-                onTap: () => setState(() => jenisHewan = j),
+                onTap: () => setState(() => jenisHewan = (j == sp.translate('cat_label') ? "Kucing" : "Anjing")),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: isSel ? _purple : _white,
+                    color: isSel ? _purple : (isDark ? const Color(0xFF1E1E2C) : _white),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSel ? _purple : _grey300, width: 1.5),
+                    border: Border.all(color: isSel ? _purple : (isDark ? Colors.white12 : _grey300), width: 1.5),
                   ),
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(j == "Kucing" ? Icons.cruelty_free : Icons.pets, color: isSel ? _white : _grey600, size: 18),
+                    Icon(j == sp.translate('cat_label') ? Icons.cruelty_free : Icons.pets, color: isSel ? _white : _grey600, size: 18),
                     const SizedBox(width: 6),
-                    Text(j, style: GoogleFonts.poppins(color: isSel ? _white : _purpleDark, fontWeight: FontWeight.w600, fontSize: 13)),
+                    Text(j, style: GoogleFonts.poppins(color: isSel ? _white : (isDark ? Colors.white : _purpleDark), fontWeight: FontWeight.w600, fontSize: 13)),
                   ]),
                 ),
               ),
@@ -665,26 +691,26 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
           }).toList()),
           const SizedBox(height: 14),
           // Jenis Kelamin
-          _RequiredLabel(label: "Jenis Kelamin"),
+          _RequiredLabel(label: sp.translate('pet_gender_label'), isDark: isDark),
           const SizedBox(height: 8),
-          Row(children: ["Jantan", "Betina"].map((k) {
-            final isSel = jenisKelamin == k;
+          Row(children: [sp.translate('male_label'), sp.translate('female_label')].map((k) {
+            final isSel = jenisKelamin == (k == sp.translate('male_label') ? "Jantan" : "Betina");
             return Expanded(child: Padding(
-              padding: EdgeInsets.only(right: k == "Jantan" ? 6 : 0, left: k == "Betina" ? 6 : 0),
+              padding: EdgeInsets.only(right: k == sp.translate('male_label') ? 6 : 0, left: k == sp.translate('female_label') ? 6 : 0),
               child: GestureDetector(
-                onTap: () => setState(() => jenisKelamin = k),
+                onTap: () => setState(() => jenisKelamin = (k == sp.translate('male_label') ? "Jantan" : "Betina")),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: isSel ? _purple : _white,
+                    color: isSel ? _purple : (isDark ? const Color(0xFF1E1E2C) : _white),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSel ? _purple : _grey300, width: 1.5),
+                    border: Border.all(color: isSel ? _purple : (isDark ? Colors.white12 : _grey300), width: 1.5),
                   ),
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(k == "Jantan" ? Icons.male_rounded : Icons.female_rounded, color: isSel ? _white : _grey600, size: 20),
+                    Icon(k == sp.translate('male_label') ? Icons.male_rounded : Icons.female_rounded, color: isSel ? _white : _grey600, size: 20),
                     const SizedBox(width: 6),
-                    Text(k, style: GoogleFonts.poppins(color: isSel ? _white : _purpleDark, fontWeight: FontWeight.w600, fontSize: 13)),
+                    Text(k, style: GoogleFonts.poppins(color: isSel ? _white : (isDark ? Colors.white : _purpleDark), fontWeight: FontWeight.w600, fontSize: 13)),
                   ]),
                 ),
               ),
@@ -694,69 +720,72 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
           _StyledTextField(
             controller: ras, label: "Ras", hint: "Contoh: Persia, Poodle",
             icon: Icons.category_outlined, isRequired: true,
-            validator: (v) => (v == null || v.isEmpty) ? "Ras wajib diisi" : null,
+            validator: (v) => (v == null || v.isEmpty) ? sp.translate('ras_req') : null,
+            isDark: isDark,
           ),
           const SizedBox(height: 14),
           _StyledTextField(
             controller: umur, label: "Umur (bulan)", hint: "Contoh: 12",
             icon: Icons.cake_outlined, keyboardType: TextInputType.number, isRequired: true,
-            validator: (v) => (v == null || v.isEmpty) ? "Umur wajib diisi" : null,
+            validator: (v) => (v == null || v.isEmpty) ? sp.translate('age_req') : null,
+            isDark: isDark,
           ),
           const SizedBox(height: 14),
           _StyledTextField(
             controller: ciriWarna, label: "Ciri / Warna", hint: "Contoh: Putih dengan bercak hitam",
             icon: Icons.palette_outlined, isRequired: true,
-            validator: (v) => (v == null || v.isEmpty) ? "Ciri/warna wajib diisi" : null,
+            validator: (v) => (v == null || v.isEmpty) ? sp.translate('color_req') : null,
+            isDark: isDark,
           ),
         ])),
         const SizedBox(height: 14),
-        _GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _sectionTitle(Icons.note_alt_outlined, "Catatan Tambahan"),
+        _GlassCard(isDark: isDark, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _sectionTitle(Icons.note_alt_outlined, sp.translate('additional_notes_label'), isDark),
           const SizedBox(height: 6),
-          Text("Opsional — tidak wajib diisi", style: GoogleFonts.poppins(fontSize: 11, color: _grey600, fontStyle: FontStyle.italic)),
+          Text(sp.translate('optional_hint'), style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white38 : _grey600, fontStyle: FontStyle.italic)),
           const SizedBox(height: 10),
           TextFormField(
             controller: catatan,
             maxLines: 3,
             maxLength: 500,
-            style: GoogleFonts.poppins(fontSize: 13, color: _purpleDark),
+            style: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.white : _purpleDark),
             decoration: InputDecoration(
-              hintText: "Tuliskan keluhan atau catatan khusus...",
-              hintStyle: GoogleFonts.poppins(fontSize: 12, color: _grey600.withOpacity(0.6)),
-              filled: true, fillColor: _purpleBg.withOpacity(0.5),
+              hintText: sp.translate('complaint_hint'),
+              hintStyle: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white24 : _grey600.withOpacity(0.6)),
+              filled: true, fillColor: isDark ? _purple.withOpacity(0.1) : _purpleBg.withOpacity(0.5),
               contentPadding: const EdgeInsets.all(14),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _grey300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _grey300)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? Colors.white12 : _grey300)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? Colors.white12 : _grey300)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: _purple, width: 1.5)),
+              counterStyle: GoogleFonts.poppins(color: isDark ? Colors.white38 : _grey600),
             ),
           ),
         ])),
         const SizedBox(height: 14),
-        // Ringkasan Pemesanan
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [_purple.withOpacity(0.08), _purpleAccent.withOpacity(0.12)]),
+            gradient: LinearGradient(colors: isDark ? [_purple.withOpacity(0.2), _purpleAccent.withOpacity(0.05)] : [_purple.withOpacity(0.08), _purpleAccent.withOpacity(0.12)]),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: _purpleAccent.withOpacity(0.4)),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Icon(Icons.receipt_long_rounded, color: _purple, size: 18),
+              Icon(Icons.receipt_long_rounded, color: isDark ? _purpleAccent : _purple, size: 18),
               const SizedBox(width: 8),
-              Text("Ringkasan Pemesanan", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: _purple)),
+              Text(sp.translate('booking_summary_title'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: isDark ? _purpleAccent : _purple)),
             ]),
             const Divider(height: 20, color: _purpleAccent),
-            _summaryRow("Layanan", selectedService?.name ?? "-"),
-            _summaryRow("Dokter", "drh. ${selectedDoctor?.name ?? '-'}"),
-            _summaryRow("Tanggal", "${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}"),
-            _summaryRow("Waktu", selectedTime),
+            _summaryRow(sp.translate('label_service'), selectedService?.name ?? "-", isDark),
+            _summaryRow(sp.translate('step_schedule').split('&')[0].trim(), "drh. ${selectedDoctor?.name ?? '-'}", isDark),
+            _summaryRow(sp.translate('visit_date_label').split(' ')[0], "${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}", isDark),
+            _summaryRow(sp.translate('visit_time_label').split(' ')[0], selectedTime, isDark),
             const Divider(height: 16, color: _purpleAccent),
             Row(children: [
-              Text("Biaya:", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: _purpleDark)),
+              Text(sp.translate('fee_label') + ":", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _purpleDark)),
               const Spacer(),
-              Text(selectedService?.formattedPrice ?? "-", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: _purple)),
+              Text(selectedService?.formattedPrice ?? "-", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? _purpleAccent : _purple)),
             ]),
           ]),
         ),
@@ -764,13 +793,13 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     );
   }
 
-  Widget _summaryRow(String label, String value) {
+  Widget _summaryRow(String label, String value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(children: [
-        Text("$label:", style: GoogleFonts.poppins(fontSize: 12, color: _grey600)),
+        Text("$label:", style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white54 : _grey600)),
         const SizedBox(width: 8),
-        Expanded(child: Text(value, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: _purpleDark), textAlign: TextAlign.end)),
+        Expanded(child: Text(value, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _purpleDark), textAlign: TextAlign.end)),
       ]),
     );
   }
@@ -787,16 +816,17 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     if (picked != null) setState(() => selectedDate = picked);
   }
 
-  Widget _buildBottomButtons() {
+  Widget _buildBottomButtons(SettingsProvider sp) {
+    final isDark = sp.isDarkMode;
     return Container(
       padding: EdgeInsets.only(left: 20, right: 20, top: 14, bottom: MediaQuery.of(context).padding.bottom + 14),
-      decoration: BoxDecoration(color: _white, borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), boxShadow: [BoxShadow(color: _purple.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, -4))]),
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E2C) : _white, borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), boxShadow: [BoxShadow(color: (isDark ? Colors.black : _purple).withOpacity(0.08), blurRadius: 16, offset: const Offset(0, -4))]),
       child: Row(children: [
         if (_currentStep > 0) Expanded(child: OutlinedButton.icon(
           onPressed: _prevStep,
           icon: const Icon(Icons.arrow_back_rounded, size: 18),
-          label: Text("Kembali", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          style: OutlinedButton.styleFrom(foregroundColor: _purple, side: const BorderSide(color: _purple, width: 1.5), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+          label: Text(sp.translate('back_btn'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          style: OutlinedButton.styleFrom(foregroundColor: isDark ? _purpleAccent : _purple, side: BorderSide(color: isDark ? _purpleAccent : _purple, width: 1.5), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
         )),
         if (_currentStep > 0) const SizedBox(width: 14),
         Expanded(
@@ -807,7 +837,7 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation(_white)))
                 : Icon(_currentStep < 2 ? Icons.arrow_forward_rounded : Icons.check_circle_rounded, size: 18),
             label: Text(
-              submitting ? "Memproses..." : (_currentStep == 0 ? "Selanjutnya" : _currentStep == 1 ? "Selanjutnya" : "Konfirmasi Pemesanan"),
+              submitting ? "Memproses..." : (_currentStep < 2 ? sp.translate('next_btn') : sp.translate('book_now_btn')),
               style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14),
             ),
             style: ElevatedButton.styleFrom(backgroundColor: _purple, foregroundColor: _white, disabledBackgroundColor: _purpleAccent, padding: const EdgeInsets.symmetric(vertical: 14), elevation: 3, shadowColor: _purple.withOpacity(0.4), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
@@ -817,11 +847,11 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
     );
   }
 
-  Widget _sectionTitle(IconData icon, String title) {
+  Widget _sectionTitle(IconData icon, String title, bool isDark) {
     return Row(children: [
-      Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: _purpleBg, borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: _purple, size: 20)),
+      Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: isDark ? _purple.withOpacity(0.15) : _purpleBg, borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: isDark ? _purpleAccent : _purple, size: 20)),
       const SizedBox(width: 10),
-      Text(title, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _purpleDark)),
+      Text(title, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: isDark ? Colors.white : _purpleDark)),
     ]);
   }
 }
@@ -829,12 +859,13 @@ class _BookingPageState extends State<BookingPage> with TickerProviderStateMixin
 // ── Reusable Widgets ──
 class _GlassCard extends StatelessWidget {
   final Widget child;
-  const _GlassCard({required this.child});
+  final bool isDark;
+  const _GlassCard({required this.child, this.isDark = false});
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity, padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: _white.withOpacity(0.92), borderRadius: BorderRadius.circular(20), border: Border.all(color: _purpleAccent.withOpacity(0.3)), boxShadow: [BoxShadow(color: _purple.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 6))]),
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E2C) : _white.withOpacity(0.92), borderRadius: BorderRadius.circular(20), border: Border.all(color: _purpleAccent.withOpacity(0.3)), boxShadow: [BoxShadow(color: (isDark ? Colors.black : _purple).withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 6))]),
       child: child,
     );
   }
@@ -842,11 +873,12 @@ class _GlassCard extends StatelessWidget {
 
 class _RequiredLabel extends StatelessWidget {
   final String label;
-  const _RequiredLabel({required this.label});
+  final bool isDark;
+  const _RequiredLabel({required this.label, this.isDark = false});
   @override
   Widget build(BuildContext context) {
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: _purpleDark)),
+      Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : _purpleDark)),
       Text(" *", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.red)),
     ]);
   }
@@ -859,25 +891,26 @@ class _StyledTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final bool isRequired;
-  const _StyledTextField({required this.controller, required this.label, required this.hint, required this.icon, this.keyboardType = TextInputType.text, this.validator, this.isRequired = false});
+  final bool isDark;
+  const _StyledTextField({required this.controller, required this.label, required this.hint, required this.icon, this.keyboardType = TextInputType.text, this.validator, this.isRequired = false, this.isDark = false});
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: _purpleDark)),
+        Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : _purpleDark)),
         if (isRequired) Text(" *", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.red)),
       ]),
       const SizedBox(height: 6),
       TextFormField(
         controller: controller, keyboardType: keyboardType, validator: validator,
-        style: GoogleFonts.poppins(fontSize: 14, color: _purpleDark),
+        style: GoogleFonts.poppins(fontSize: 14, color: isDark ? Colors.white : _purpleDark),
         decoration: InputDecoration(
-          hintText: hint, hintStyle: GoogleFonts.poppins(fontSize: 13, color: _grey600.withOpacity(0.6)),
-          prefixIcon: Icon(icon, color: _purpleLight, size: 20),
-          filled: true, fillColor: _purpleBg.withOpacity(0.5),
+          hintText: hint, hintStyle: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.white24 : _grey600.withOpacity(0.6)),
+          prefixIcon: Icon(icon, color: isDark ? _purpleAccent : _purpleLight, size: 20),
+          filled: true, fillColor: isDark ? _purple.withOpacity(0.1) : _purpleBg.withOpacity(0.5),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _grey300)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _grey300)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? Colors.white12 : _grey300)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? Colors.white12 : _grey300)),
           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: _purple, width: 1.5)),
           errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.red.shade300, width: 1.5)),
           focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.red.shade400, width: 1.5)),
@@ -893,19 +926,22 @@ class _StyledDropdown<T> extends StatelessWidget {
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
   final IconData icon;
-  const _StyledDropdown({required this.label, required this.value, required this.items, required this.onChanged, required this.icon});
+  final bool isDark;
+  const _StyledDropdown({required this.label, required this.value, required this.items, required this.onChanged, required this.icon, this.isDark = false});
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: _purpleDark)),
+      Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : _purpleDark)),
       const SizedBox(height: 6),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(color: _purpleBg.withOpacity(0.5), borderRadius: BorderRadius.circular(14), border: Border.all(color: _grey300)),
+        decoration: BoxDecoration(color: isDark ? _purple.withOpacity(0.1) : _purpleBg.withOpacity(0.5), borderRadius: BorderRadius.circular(14), border: Border.all(color: isDark ? Colors.white12 : _grey300)),
         child: DropdownButtonHideUnderline(child: DropdownButton<T>(
           value: value, items: items, onChanged: onChanged, isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: _purple),
-          style: GoogleFonts.poppins(fontSize: 14, color: _purpleDark), dropdownColor: _white, borderRadius: BorderRadius.circular(14),
+          icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? _purpleAccent : _purple),
+          style: GoogleFonts.poppins(fontSize: 14, color: isDark ? Colors.white : _purpleDark),
+          dropdownColor: isDark ? const Color(0xFF1E1E2C) : _white,
+          borderRadius: BorderRadius.circular(14),
         )),
       ),
     ]);

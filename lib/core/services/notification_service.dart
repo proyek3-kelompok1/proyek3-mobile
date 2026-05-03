@@ -110,21 +110,25 @@ class NotificationService {
     required String body,
   }) async {
     final androidDetails = AndroidNotificationDetails(
-      'dvpets_channel',
-      'DV Pets Notifications',
+      'dvpets_main_channel',
+      'DVPets Notifications',
+      channelDescription: 'Informasi dan notifikasi penting dari DVPets',
       importance: Importance.max,
       priority: Priority.high,
-      color: const Color(0xFF4A1059), // Warna Ungu DV Pets
+      color: const Color(0xFF4A1059),
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      subText: 'DVPets Care',
       styleInformation: BigTextStyleInformation(
         body,
         contentTitle: title,
-        summaryText: 'Notifikasi DV Pets',
+        summaryText: 'Kabar Terbaru',
       ),
       playSound: true,
       enableVibration: true,
       ledColor: const Color(0xFF4A1059),
       ledOnMs: 1000,
       ledOffMs: 500,
+      ticker: 'Notifikasi Baru DVPets',
     );
     
     const iosDetails = DarwinNotificationDetails(
@@ -151,6 +155,15 @@ class NotificationService {
     final currentList = List<AppNotification>.from(notificationsNotifier.value);
     currentList.insert(0, newNotif);
     notificationsNotifier.value = currentList;
+  }
+
+  void markAsRead(String id) {
+    final currentList = List<AppNotification>.from(notificationsNotifier.value);
+    final index = currentList.indexWhere((n) => n.id == id);
+    if (index != -1) {
+      currentList[index].isRead = true;
+      notificationsNotifier.value = currentList;
+    }
   }
 
   void markAllAsRead() {
@@ -180,9 +193,13 @@ class NotificationService {
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'dvpets_reminders',
-          'DV Pets Reminders',
+          'DVPets Reminders',
+          channelDescription: 'Pengingat jadwal booking dan kesehatan anabul',
           importance: Importance.max,
           priority: Priority.high,
+          color: const Color(0xFF4A1059),
+          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          subText: 'DVPets Reminder',
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

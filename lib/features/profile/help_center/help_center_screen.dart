@@ -450,7 +450,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 color: const Color(0xFF4A1059).withOpacity(isDark ? 0.15 : 0.08),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(icon, color: const Color(0xFF4A1059), size: 24),
+              child: Icon(icon, color: isDark ? Colors.white : const Color(0xFF4A1059), size: 24),
             ),
             const SizedBox(width: 18),
             Expanded(

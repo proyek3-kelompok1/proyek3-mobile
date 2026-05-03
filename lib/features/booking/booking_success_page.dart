@@ -86,12 +86,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            _purple.withOpacity(0.1),
-                            _purpleAccent.withOpacity(0.15),
-                          ],
-                        ),
+                        color: _purple.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Container(
@@ -554,11 +549,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
         bottom: 20,
       ),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_purpleDark, _purple, _purpleLight],
-        ),
+        color: _purple,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(28),
           bottomRight: Radius.circular(28),

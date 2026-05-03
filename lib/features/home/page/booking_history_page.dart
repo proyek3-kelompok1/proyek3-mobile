@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import '../../../core/providers/settings_provider.dart';
 import '../../../core/constants/api_constants.dart';
 
 const _purple = Color(0xFF4A1059);
@@ -72,12 +74,12 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     }
   }
 
-  String _statusLabel(String status) {
+  String _statusLabel(String status, SettingsProvider sp) {
     switch (status) {
-      case 'pending': return 'Menunggu';
-      case 'confirmed': return 'Dilayani';
-      case 'completed': return 'Selesai';
-      case 'cancelled': return 'Dibatalkan';
+      case 'pending': return sp.translate('waiting_status');
+      case 'confirmed': return sp.translate('serving');
+      case 'completed': return sp.translate('finished_status');
+      case 'cancelled': return sp.translate('cancel');
       default: return status;
     }
   }
@@ -94,8 +96,10 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final isDark = settingsProvider.isDarkMode;
     return Scaffold(
-      backgroundColor: _purpleBg,
+      backgroundColor: isDark ? const Color(0xFF13131C) : _purpleBg,
       body: Column(children: [
         // Header
         Container(
@@ -116,8 +120,8 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
             ),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text("Riwayat Booking", style: GoogleFonts.poppins(color: _white, fontSize: 20, fontWeight: FontWeight.w700)),
-              Text("Cek status pemesanan Anda", style: GoogleFonts.poppins(color: _white.withOpacity(0.75), fontSize: 11)),
+              Text(settingsProvider.translate('booking_history_title'), style: GoogleFonts.poppins(color: _white, fontSize: 20, fontWeight: FontWeight.w700)),
+              Text(settingsProvider.translate('check_booking_status'), style: GoogleFonts.poppins(color: _white.withOpacity(0.75), fontSize: 11)),
             ])),
           ]),
         ),
@@ -126,9 +130,9 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           padding: const EdgeInsets.all(16),
           child: Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: _white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: _purple.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 4))]),
+            decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E2C) : _white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: _purple.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 4))]),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text("Masukkan Email", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: _purpleDark)),
+              Text(settingsProvider.translate('enter_email'), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _purpleDark)),
               const SizedBox(height: 8),
               Row(children: [
                 Expanded(
@@ -137,14 +141,15 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                     keyboardType: TextInputType.emailAddress,
                     style: GoogleFonts.poppins(fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: "contoh@email.com",
-                      hintStyle: GoogleFonts.poppins(fontSize: 13, color: _grey600.withOpacity(0.5)),
+                      hintText: settingsProvider.translate('email_placeholder'),
+                      hintStyle: GoogleFonts.poppins(fontSize: 13, color: (isDark ? Colors.white38 : _grey600.withOpacity(0.5))),
                       prefixIcon: const Icon(Icons.email_outlined, color: _purpleLight, size: 20),
-                      filled: true, fillColor: _purpleBg.withOpacity(0.5),
+                      filled: true, 
+                      fillColor: isDark ? Colors.white.withOpacity(0.05) : _purpleBg.withOpacity(0.5),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _grey300)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _grey300)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _purple, width: 1.5)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white12 : _grey300)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.white12 : _grey300)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? _purpleAccent : _purple, width: 1.5)),
                     ),
                     onFieldSubmitted: (_) => _search(),
                   ),
@@ -169,31 +174,32 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                   ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.history_rounded, size: 64, color: _purpleAccent.withOpacity(0.5)),
                       const SizedBox(height: 12),
-                      Text("Masukkan email untuk melihat\nriwayat booking", style: GoogleFonts.poppins(fontSize: 13, color: _grey600), textAlign: TextAlign.center),
+                      Text(settingsProvider.translate('search_booking_history_hint'), style: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.white70 : _grey600), textAlign: TextAlign.center),
                     ]))
                   : bookings.isEmpty
                       ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                           Icon(Icons.inbox_rounded, size: 64, color: _purpleAccent.withOpacity(0.5)),
                           const SizedBox(height: 12),
-                          Text("Tidak ada riwayat booking", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: _grey600)),
-                          Text("untuk email ini", style: GoogleFonts.poppins(fontSize: 12, color: _grey600)),
+                          Text(settingsProvider.translate('no_booking_history'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _grey600)),
+                          Text(settingsProvider.translate('for_this_email'), style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white70 : _grey600)),
                         ]))
                       : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           itemCount: bookings.length,
-                          itemBuilder: (_, i) => _buildBookingCard(bookings[i]),
+                          itemBuilder: (_, i) => _buildBookingCard(bookings[i], settingsProvider),
                         ),
         ),
       ]),
     );
   }
 
-  Widget _buildBookingCard(Map<String, dynamic> b) {
+  Widget _buildBookingCard(Map<String, dynamic> b, SettingsProvider sp) {
     final status = b['status'] ?? 'pending';
+    final isDark = sp.isDarkMode;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: _white,
+        color: isDark ? const Color(0xFF1E1E2C) : _white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _statusColor(status).withOpacity(0.3)),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
@@ -209,7 +215,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           child: Row(children: [
             Icon(_statusIcon(status), color: _statusColor(status), size: 18),
             const SizedBox(width: 8),
-            Text(_statusLabel(status), style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: _statusColor(status))),
+            Text(_statusLabel(status, sp), style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: _statusColor(status))),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -224,34 +230,34 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           child: Column(children: [
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text("Kode Booking", style: GoogleFonts.poppins(fontSize: 10, color: _grey600)),
-                Text(b['booking_code'] ?? '-', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: _purple)),
+                Text(sp.translate('booking_code_label'), style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white38 : _grey600)),
+                Text(b['booking_code'] ?? '-', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? _purpleAccent : _purple)),
               ])),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text("Layanan", style: GoogleFonts.poppins(fontSize: 10, color: _grey600)),
-                Text(b['service_name'] ?? '-', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: _purpleDark)),
+                Text(sp.translate('service_label'), style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white38 : _grey600)),
+                Text(b['service_name'] ?? '-', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : _purpleDark)),
               ])),
             ]),
             const SizedBox(height: 10),
-            const Divider(height: 1, color: _grey300),
+            const Divider(height: 1, color: Colors.white12),
             const SizedBox(height: 10),
             Row(children: [
-              _infoChip(Icons.pets_rounded, "${b['nama_hewan'] ?? '-'} (${b['jenis_hewan'] ?? '-'})"),
+              _infoChip(Icons.pets_rounded, "${b['nama_hewan'] ?? '-'} (${b['jenis_hewan'] ?? '-'})", isDark),
               const Spacer(),
-              _infoChip(Icons.calendar_today_rounded, b['booking_date'] ?? '-'),
+              _infoChip(Icons.calendar_today_rounded, b['booking_date'] ?? '-', isDark),
             ]),
             const SizedBox(height: 6),
             Row(children: [
-              _infoChip(Icons.person_rounded, b['doctor_name'] ?? '-'),
+              _infoChip(Icons.person_rounded, b['doctor_name'] ?? '-', isDark),
               const Spacer(),
-              _infoChip(Icons.schedule_rounded, b['booking_time'] ?? '-'),
+              _infoChip(Icons.schedule_rounded, b['booking_time'] ?? '-', isDark),
             ]),
             if (b['total_price'] != null && b['total_price'] > 0) ...[
               const SizedBox(height: 10),
               Row(children: [
-                Text("Total:", style: GoogleFonts.poppins(fontSize: 12, color: _grey600)),
+                Text("${sp.translate('total_label')}:", style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white60 : _grey600)),
                 const Spacer(),
-                Text("Rp ${_formatNumber(b['total_price'])}", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: _purple)),
+                Text("Rp ${_formatNumber(b['total_price'])}", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: isDark ? _purpleAccent : _purple)),
               ]),
             ],
           ]),
@@ -260,11 +266,11 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     );
   }
 
-  Widget _infoChip(IconData icon, String text) {
+  Widget _infoChip(IconData icon, String text, bool isDark) {
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 14, color: _purpleLight),
+      Icon(icon, size: 14, color: isDark ? _purpleAccent : _purpleLight),
       const SizedBox(width: 4),
-      Text(text, style: GoogleFonts.poppins(fontSize: 11, color: _purpleDark)),
+      Text(text, style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white70 : _purpleDark)),
     ]);
   }
 

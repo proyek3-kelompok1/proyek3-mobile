@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import '../../../core/providers/settings_provider.dart';
 import '../../../core/constants/api_constants.dart';
 
 const _purple = Color(0xFF4A1059);
@@ -56,7 +58,7 @@ class _QueuePageState extends State<QueuePage> {
     super.dispose();
   }
 
-  Future<void> _checkMyQueue() async {
+  Future<void> _checkMyQueue(SettingsProvider sp) async {
     if (_codeController.text.isEmpty) return;
     setState(() => checkingQueue = true);
     try {
@@ -72,7 +74,7 @@ class _QueuePageState extends State<QueuePage> {
         setState(() { myQueue = null; checkingQueue = false; });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("Kode booking tidak ditemukan"),
+            content: Text(sp.translate('booking_code_not_found')),
             backgroundColor: Colors.red.shade400,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -116,41 +118,53 @@ class _QueuePageState extends State<QueuePage> {
     }
   }
 
-  String _statusLabel(String s) {
+  String _statusLabel(String s, SettingsProvider sp) {
     switch (s) {
-      case 'pending': return 'Menunggu';
-      case 'confirmed': return 'Dilayani';
-      case 'completed': return 'Selesai';
-      case 'cancelled': return 'Batal';
+      case 'pending': return sp.translate('waiting_status');
+      case 'confirmed': return sp.translate('serving');
+      case 'completed': return sp.translate('finished_status');
+      case 'cancelled': return sp.translate('cancel');
       default: return s;
     }
   }
 
-  String _serviceLabel(String s) {
-    const m = {'general': 'Umum', 'vaccination': 'Vaksinasi', 'grooming': 'Grooming', 'dental': 'Gigi', 'surgery': 'Operasi', 'laboratory': 'Lab', 'inpatient': 'Rawat', 'emergency': 'Darurat'};
-    return m[s] ?? s;
+  String _serviceLabel(String s, SettingsProvider sp) {
+    const m = {
+      'general': 'general_consultation',
+      'vaccination': 'vaccination',
+      'grooming': 'grooming',
+      'dental': 'dental_care',
+      'surgery': 'surgery_label',
+      'laboratory': 'laboratory_label',
+      'inpatient': 'inpatient', // Add key if needed
+      'emergency': 'emergency' // Add key if needed
+    };
+    final key = m[s] ?? s;
+    return sp.translate(key);
   }
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final isDark = settingsProvider.isDarkMode;
     return Scaffold(
-      backgroundColor: _purpleBg,
+      backgroundColor: isDark ? const Color(0xFF13131C) : _purpleBg,
       body: Column(children: [
-        _buildHeader(),
+        _buildHeader(settingsProvider),
         Expanded(child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
           child: Column(children: [
-            _buildCheckSection(),
-            if (myQueue != null) _buildMyQueueResult(),
+            _buildCheckSection(settingsProvider),
+            if (myQueue != null) _buildMyQueueResult(settingsProvider),
             const SizedBox(height: 16),
-            _buildQueueListSection(),
+            _buildQueueListSection(settingsProvider),
           ]),
         )),
       ]),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(SettingsProvider sp) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 12, left: 20, right: 20, bottom: 16),
@@ -165,8 +179,8 @@ class _QueuePageState extends State<QueuePage> {
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text("Info Antrian Klinik", style: GoogleFonts.poppins(color: _white, fontSize: 20, fontWeight: FontWeight.w700)),
-          Text("Pantau antrian real-time", style: GoogleFonts.poppins(color: _white.withOpacity(0.75), fontSize: 11)),
+          Text(sp.translate('queue_info_title'), style: GoogleFonts.poppins(color: _white, fontSize: 20, fontWeight: FontWeight.w700)),
+          Text(sp.translate('realtime_queue_desc'), style: GoogleFonts.poppins(color: _white.withOpacity(0.75), fontSize: 11)),
         ])),
         GestureDetector(
           onTap: _loadQueueList,
@@ -176,15 +190,16 @@ class _QueuePageState extends State<QueuePage> {
     );
   }
 
-  Widget _buildCheckSection() {
+  Widget _buildCheckSection(SettingsProvider sp) {
+    final isDark = sp.isDarkMode;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: _white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: _purple.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))]),
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E2C) : _white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: _purple.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(Icons.search_rounded, color: _purple, size: 20),
+          Icon(Icons.search_rounded, color: isDark ? Colors.white : _purple, size: 20),
           const SizedBox(width: 8),
-          Text("Cek Antrian Saya", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: _purple)),
+          Text(sp.translate('check_my_queue'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: isDark ? Colors.white : _purple)),
         ]),
         const SizedBox(height: 10),
         Row(children: [
@@ -193,7 +208,7 @@ class _QueuePageState extends State<QueuePage> {
               controller: _codeController,
               style: GoogleFonts.poppins(fontSize: 13),
               decoration: InputDecoration(
-                hintText: "Masukkan kode booking...",
+                hintText: sp.translate('enter_booking_code'),
                 hintStyle: GoogleFonts.poppins(fontSize: 12, color: _grey600.withOpacity(0.5)),
                 prefixIcon: const Icon(Icons.confirmation_number_outlined, color: _purpleLight, size: 20),
                 filled: true, fillColor: _purpleBg.withOpacity(0.5),
@@ -202,32 +217,34 @@ class _QueuePageState extends State<QueuePage> {
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _grey300)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _purple, width: 1.5)),
               ),
-              onFieldSubmitted: (_) => _checkMyQueue(),
+               onFieldSubmitted: (_) => _checkMyQueue(sp),
             ),
           ),
           const SizedBox(width: 10),
           ElevatedButton(
-            onPressed: checkingQueue ? null : _checkMyQueue,
+            onPressed: checkingQueue ? null : () => _checkMyQueue(sp),
             style: ElevatedButton.styleFrom(backgroundColor: _purple, foregroundColor: _white, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: checkingQueue
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(_white)))
-                : Text("Cek", style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+                : Text(sp.translate('check_btn'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
           ),
         ]),
       ]),
     );
   }
 
-  Widget _buildMyQueueResult() {
+  Widget _buildMyQueueResult(SettingsProvider sp) {
     final booking = myQueue!['booking'];
     final info = myQueue!['queue_info'];
     final position = info['current_position'];
     final waitMins = info['estimated_wait_minutes'] ?? 0;
-    final serving = info['current_serving'];
+    final servingNum = info['current_serving'];
+    final isDark = sp.isDarkMode;
 
     return Container(
       margin: const EdgeInsets.only(top: 14),
       decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2C) : _white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.4)),
       ),
@@ -239,7 +256,7 @@ class _QueuePageState extends State<QueuePage> {
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             const Icon(Icons.person_pin_rounded, color: _white, size: 18),
             const SizedBox(width: 8),
-            Text("Antrian Anda", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: _white)),
+            Text(sp.translate('your_queue'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: _white)),
           ]),
         ),
         Container(
@@ -249,12 +266,12 @@ class _QueuePageState extends State<QueuePage> {
           child: Column(children: [
             Row(children: [
               Expanded(child: Column(children: [
-                Text("Nomor Antrian", style: GoogleFonts.poppins(fontSize: 10, color: _grey600)),
-                Text("A${(booking['nomor_antrian'] ?? 0).toString().padLeft(3, '0')}", style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.w800, color: _purple)),
+                Text(sp.translate('queue_number'), style: GoogleFonts.poppins(fontSize: 10, color: _grey600)),
+                Text("A${(booking['nomor_antrian'] ?? 0).toString().padLeft(3, '0')}", style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.w800, color: isDark ? Colors.white : _purple)),
               ])),
               Container(width: 1, height: 60, color: _grey300),
               Expanded(child: Column(children: [
-                Text("Posisi", style: GoogleFonts.poppins(fontSize: 10, color: _grey600)),
+                Text(sp.translate('position'), style: GoogleFonts.poppins(fontSize: 10, color: _grey600)),
                 Text(position != null ? "#$position" : "-", style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF4CAF50))),
               ])),
             ]),
@@ -262,21 +279,21 @@ class _QueuePageState extends State<QueuePage> {
             const Divider(color: _grey300),
             const SizedBox(height: 8),
             Row(children: [
-              _queueInfoChip(Icons.hourglass_top_rounded, "Estimasi", "$waitMins mnt", Colors.orange),
+              _queueInfoChip(Icons.hourglass_top_rounded, sp.translate('estimated'), "$waitMins mnt", Colors.orange),
               const SizedBox(width: 12),
-              _queueInfoChip(Icons.play_circle_rounded, "Dilayani", serving != null ? "A${serving.toString().padLeft(3, '0')}" : "-", Colors.blue),
+              _queueInfoChip(Icons.play_circle_rounded, sp.translate('serving'), servingNum != null ? "A${servingNum.toString().padLeft(3, '0')}" : "-", Colors.blue),
               const SizedBox(width: 12),
-              _queueInfoChip(Icons.people_rounded, "Total", "${info['total_in_queue'] ?? 0}", _purple),
+              _queueInfoChip(Icons.people_rounded, sp.translate('total'), "${info['total_in_queue'] ?? 0}", _purple),
             ]),
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: _purpleBg, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: isDark ? _purple.withOpacity(0.1) : _purpleBg, borderRadius: BorderRadius.circular(10)),
               child: Row(children: [
                 Icon(Icons.info_outline_rounded, color: _purple, size: 16),
                 const SizedBox(width: 8),
-                Expanded(child: Text("${booking['nama_hewan']} (${booking['jenis_hewan']}) • ${booking['booking_time']}", style: GoogleFonts.poppins(fontSize: 11, color: _purpleDark))),
+                Expanded(child: Text("${booking['nama_hewan']} (${booking['jenis_hewan']}) • ${booking['booking_time']}", style: GoogleFonts.poppins(fontSize: 11, color: isDark ? Colors.white70 : _purpleDark))),
               ]),
             ),
           ]),
@@ -298,17 +315,18 @@ class _QueuePageState extends State<QueuePage> {
     ));
   }
 
-  Widget _buildQueueListSection() {
+  Widget _buildQueueListSection(SettingsProvider sp) {
+    final isDark = sp.isDarkMode;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       // Filters
       Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: _white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: _purple.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))]),
+        decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E2C) : _white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: _purple.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))]),
         child: Column(children: [
           Row(children: [
-            Icon(Icons.access_time_rounded, size: 18, color: _purple),
+            Icon(Icons.access_time_rounded, size: 18, color: isDark ? Colors.white : _purple),
             const SizedBox(width: 8),
-            Text("Antrian Real-time", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: _purple)),
+            Text(sp.translate('realtime_queue'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: isDark ? Colors.white : _purple)),
           ]),
           const SizedBox(height: 12),
           Row(children: [
@@ -337,7 +355,18 @@ class _QueuePageState extends State<QueuePage> {
                 icon: const Icon(Icons.keyboard_arrow_down_rounded, color: _purple, size: 20),
                 style: GoogleFonts.poppins(fontSize: 12, color: _purpleDark),
                 dropdownColor: _white, borderRadius: BorderRadius.circular(12),
-                items: serviceFilters.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, style: GoogleFonts.poppins(fontSize: 12)))).toList(),
+                items: serviceFilters.entries.map((e) {
+                  final keys = {
+                    "all": "all_services",
+                    "general": "general_consultation",
+                    "vaccination": "vaccination",
+                    "grooming": "grooming",
+                    "dental": "dental_care",
+                    "surgery": "surgery_label",
+                    "laboratory": "laboratory_label",
+                  };
+                  return DropdownMenuItem(value: e.key, child: Text(sp.translate(keys[e.key] ?? e.value), style: GoogleFonts.poppins(fontSize: 12)));
+                }).toList(),
                 onChanged: (v) { setState(() => selectedService = v!); _loadQueueList(); },
               )),
             )),
@@ -347,13 +376,13 @@ class _QueuePageState extends State<QueuePage> {
       const SizedBox(height: 12),
       // Stats row
       if (stats.isNotEmpty) Row(children: [
-        _statCard("Antrian", "${stats['total'] ?? 0}", _purple),
+        _statCard(sp.translate('antrian'), "${stats['total'] ?? 0}", _purple),
         const SizedBox(width: 8),
-        _statCard("Menunggu", "${stats['waiting'] ?? 0}", Colors.orange),
+        _statCard(sp.translate('waiting_status'), "${stats['waiting'] ?? 0}", Colors.orange),
         const SizedBox(width: 8),
-        _statCard("Dilayani", "${stats['serving'] ?? 0}", Colors.blue),
+        _statCard(sp.translate('serving'), "${stats['serving'] ?? 0}", Colors.blue),
         const SizedBox(width: 8),
-        _statCard("Selesai", "${stats['completed'] ?? 0}", const Color(0xFF4CAF50)),
+        _statCard(sp.translate('finished_status'), "${stats['completed'] ?? 0}", const Color(0xFF4CAF50)),
       ]),
       const SizedBox(height: 12),
       // Queue table
@@ -365,11 +394,11 @@ class _QueuePageState extends State<QueuePage> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(color: _purple, borderRadius: const BorderRadius.vertical(top: Radius.circular(16))),
             child: Row(children: [
-              Expanded(flex: 2, child: Text("No.", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
-              Expanded(flex: 3, child: Text("Kode", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
-              Expanded(flex: 3, child: Text("Layanan", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
-              Expanded(flex: 2, child: Text("Waktu", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
-              Expanded(flex: 2, child: Text("Status", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
+              Expanded(flex: 2, child: Text(sp.translate('code_label'), style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
+              Expanded(flex: 3, child: Text(sp.translate('booking_code_label'), style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
+              Expanded(flex: 3, child: Text(sp.translate('service_label'), style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
+              Expanded(flex: 2, child: Text(sp.translate('time_label'), style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
+              Expanded(flex: 2, child: Text(sp.translate('status_label'), style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _white))),
             ]),
           ),
           if (loadingList)
@@ -378,7 +407,7 @@ class _QueuePageState extends State<QueuePage> {
             Padding(padding: const EdgeInsets.all(24), child: Column(children: [
               Icon(Icons.inbox_rounded, size: 40, color: _purpleAccent.withOpacity(0.5)),
               const SizedBox(height: 8),
-              Text("Tidak ada antrian", style: GoogleFonts.poppins(fontSize: 12, color: _grey600)),
+              Text(sp.translate('no_queue'), style: GoogleFonts.poppins(fontSize: 12, color: isDark ? Colors.white70 : _grey600)),
             ]))
           else
             ...queueList.asMap().entries.map((entry) {
@@ -387,7 +416,7 @@ class _QueuePageState extends State<QueuePage> {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: i % 2 == 0 ? _white : _purpleBg.withOpacity(0.3),
+                  color: i % 2 == 0 ? (isDark ? const Color(0xFF1E1E2C) : _white) : (isDark ? Colors.white.withOpacity(0.05) : _purpleBg.withOpacity(0.3)),
                   border: Border(bottom: BorderSide(color: _grey300.withOpacity(0.5))),
                 ),
                 child: Row(children: [
@@ -396,13 +425,13 @@ class _QueuePageState extends State<QueuePage> {
                     decoration: BoxDecoration(color: _purple.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
                     child: Text("A${(q['nomor_antrian'] ?? 0).toString().padLeft(3, '0')}", style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: _purple), textAlign: TextAlign.center),
                   )),
-                  Expanded(flex: 3, child: Text(q['booking_code'] ?? '-', style: GoogleFonts.poppins(fontSize: 10, color: _purpleDark), overflow: TextOverflow.ellipsis)),
-                  Expanded(flex: 3, child: Text(_serviceLabel(q['service_type'] ?? ''), style: GoogleFonts.poppins(fontSize: 10, color: _purpleDark))),
-                  Expanded(flex: 2, child: Text(q['booking_time'] ?? '-', style: GoogleFonts.poppins(fontSize: 10, color: _purpleDark))),
+                  Expanded(flex: 3, child: Text(q['booking_code'] ?? '-', style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white70 : _purpleDark), overflow: TextOverflow.ellipsis)),
+                  Expanded(flex: 3, child: Text(_serviceLabel(q['service_type'] ?? '', sp), style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white70 : _purpleDark))),
+                  Expanded(flex: 2, child: Text(q['booking_time'] ?? '-', style: GoogleFonts.poppins(fontSize: 10, color: isDark ? Colors.white70 : _purpleDark))),
                   Expanded(flex: 2, child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(color: _statusColor(q['status'] ?? '').withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
-                    child: Text(_statusLabel(q['status'] ?? ''), style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w600, color: _statusColor(q['status'] ?? '')), textAlign: TextAlign.center),
+                    child: Text(_statusLabel(q['status'] ?? '', sp), style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w600, color: _statusColor(q['status'] ?? '')), textAlign: TextAlign.center),
                   )),
                 ]),
               );

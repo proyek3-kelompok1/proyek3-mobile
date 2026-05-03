@@ -104,4 +104,22 @@ class ConsultationApi {
       throw Exception("Gagal mengirim pesan");
     }
   }
+
+  /// Delete a consultation session
+  static Future<void> deleteConsultation(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    final response = await http.delete(
+      Uri.parse("${ApiConstants.consultations}/$id"),
+      headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception("Gagal menghapus konsultasi: ${response.body}");
+    }
+  }
 }

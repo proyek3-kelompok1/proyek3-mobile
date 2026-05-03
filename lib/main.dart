@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
 import 'core/services/notification_service.dart';
 import 'core/providers/settings_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'navbar_page.dart';
 import 'features/auth/login_page.dart';
 
@@ -55,11 +56,20 @@ class MyApp extends StatelessWidget {
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        primaryColor: const Color(0xFF4A1059),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4A1059),
-          brightness: Brightness.dark,
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFF9D50BB),
+        scaffoldBackgroundColor: const Color(0xFF13131C), // Deep Purple-Navy
+        cardColor: const Color(0xFF1E1E2C),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF9D50BB),
+          secondary: Color(0xFF6E48AA),
+          surface: Color(0xFF1E1E2C),
+          background: const Color(0xFF13131C),
+          onPrimary: Colors.white,
+          onSurface: Colors.white,
+          onBackground: Colors.white,
         ),
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: isLoggedIn ? const NavBarPage() : const LoginPage(),

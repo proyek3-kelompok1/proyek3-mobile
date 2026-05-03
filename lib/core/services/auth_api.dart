@@ -8,9 +8,9 @@ import 'notification_service.dart';
 class AuthApi {
   // Masukkan Web Client ID di sini agar bisa digunakan untuk verifikasi di Backend
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '862174055865-g0cigimem29h8nfseqke0tc0skbocqnu.apps.googleusercontent.com',
+    serverClientId: '862174055865-01ibuo61k344k9aaonhne4p76tpach1s.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
-  ); 
+  );
 
   // Sign In with Google
   Future<Map<String, dynamic>?> signInWithGoogle() async {
@@ -286,7 +286,13 @@ class AuthApi {
       }
 
       await _googleSignIn.signOut();
-      await prefs.clear();
+      
+      // Jangan pakai clear() supaya label dan hidden chat nggak ilang
+      await prefs.remove('auth_token');
+      await prefs.remove('user_data');
+      await prefs.remove('user_role');
+      await prefs.remove('user_name');
+      
       return true;
     } catch (e) {
       print('Logout Error: $e');

@@ -5,6 +5,8 @@ import '../../models/consultation_model.dart';
 import '../../models/doctor_model.dart';
 import '../../models/message_model.dart';
 import '../../core/services/consultation_api.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/settings_provider.dart';
 
 // ──────────────────────────────────────────────────────────
 //  COLOUR PALETTE
@@ -127,8 +129,9 @@ class _ChatPageState extends State<ChatPage> {
       await _loadMessages();
     } catch (e) {
       if (mounted) {
+        final sp = Provider.of<SettingsProvider>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal mengirim: $e")),
+          SnackBar(content: Text(sp.translate('fail_send_chat').replaceAll('{error}', e.toString()))),
         );
       }
     } finally {
@@ -150,16 +153,19 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF13131C) : const Color(0xFFF3EEFF);
+
     return Scaffold(
-      backgroundColor: _purpleBg,
+      backgroundColor: bgColor,
       body: Column(
         children: [
           _buildHeader(),
           if (_loading)
-            const Expanded(
+             Expanded(
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(_purple),
+                  valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
                 ),
               ),
             )
@@ -168,8 +174,8 @@ class _ChatPageState extends State<ChatPage> {
           else ...[
             Expanded(
               child: _messages.isEmpty
-                  ? _buildEmptyChat()
-                  : ListView.builder(
+                   ? _buildEmptyChat()
+                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                       itemCount: _messages.length,
@@ -186,15 +192,16 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildHeader() {
+    final sp = Provider.of<SettingsProvider>(context, listen: false);
     final title = widget.isDoctor 
-        ? (widget.session?.userName ?? "Pasien")
+        ? (widget.session?.userName ?? sp.translate('patient'))
         : (widget.session?.doctorName != null ? "Dr. ${widget.session!.doctorName}" : (widget.doctor?.name != null ? "Dr. ${widget.doctor!.name}" : "Dr. ${widget.session?.userName ?? 'Dokter'}"));
     
-    final subTitle = widget.session?.isOnline == true ? "Online" : "Offline";
+    final subTitle = widget.session?.isOnline == true ? sp.translate('online') : sp.translate('offline');
     
     final avatarUrl = widget.isDoctor 
         ? widget.session?.userAvatar 
-        : (widget.session?.userAvatar ?? widget.doctor?.photoUrl); // Using userAvatar here as fallback but usually it's doctor photo
+        : (widget.session?.userAvatar ?? widget.doctor?.photoUrl); 
 
     return Container(
       width: double.infinity,
@@ -204,13 +211,9 @@ class _ChatPageState extends State<ChatPage> {
         right: 16,
         bottom: 16,
       ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_purpleDark, _purple, _purpleLight],
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: _purple,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
@@ -270,39 +273,9 @@ class _ChatPageState extends State<ChatPage> {
                 Text(
                   subTitle,
                   style: GoogleFonts.poppins(
-                    color: subTitle == "Online" ? Colors.greenAccent : _white.withOpacity(0.7),
+                    color: widget.session?.isOnline == true ? Colors.greenAccent : _white.withOpacity(0.7),
                     fontSize: 11,
-                    fontWeight: subTitle == "Online" ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Online indicator
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: _white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF4CAF50),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  "Online",
-                  style: GoogleFonts.poppins(
-                    color: _white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: widget.session?.isOnline == true ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
               ],
@@ -314,6 +287,8 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildEmptyChat() {
+    final sp = Provider.of<SettingsProvider>(context);
+    final isDark = sp.isDarkMode;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -331,20 +306,20 @@ class _ChatPageState extends State<ChatPage> {
             ),
             const SizedBox(height: 20),
             Text(
-              "Mulai Konsultasi",
+              sp.translate('start_consultation'),
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: _purpleDark,
+                color: isDark ? Colors.white : _purpleDark,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              "Ketik pesan untuk memulai konsultasi\ndengan ${widget.doctor?.name ?? widget.session?.doctorName ?? "Dokter"}",
+              sp.translate('start_chat_desc').replaceAll('{name}', widget.doctor?.name ?? widget.session?.doctorName ?? "Dokter"),
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: _grey600,
+                color: isDark ? Colors.white70 : _grey600,
                 height: 1.5,
               ),
             ),
@@ -355,6 +330,8 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildError() {
+    final sp = Provider.of<SettingsProvider>(context);
+    final isDark = sp.isDarkMode;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -365,11 +342,11 @@ class _ChatPageState extends State<ChatPage> {
                 color: _purpleAccent, size: 48),
             const SizedBox(height: 12),
             Text(
-              "Gagal memulai konsultasi",
+              sp.translate('fail_start_chat'),
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: _purpleDark,
+                color: isDark ? Colors.white : _purpleDark,
               ),
             ),
             const SizedBox(height: 6),
@@ -430,7 +407,7 @@ class _ChatPageState extends State<ChatPage> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isMe ? _purple : _white,
+                color: isMe ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
@@ -440,7 +417,7 @@ class _ChatPageState extends State<ChatPage> {
                 boxShadow: [
                   BoxShadow(
                     color:
-                        (isMe ? _purple : Colors.black).withOpacity(0.08),
+                        (isMe ? Theme.of(context).primaryColor : Colors.black).withOpacity(0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -452,7 +429,7 @@ class _ChatPageState extends State<ChatPage> {
                   Text(
                     msg.message,
                     style: GoogleFonts.poppins(
-                      color: isMe ? _white : _purpleDark,
+                      color: isMe ? Colors.white : Theme.of(context).colorScheme.onSurface,
                       fontSize: 13.5,
                       height: 1.5,
                     ),
@@ -467,8 +444,8 @@ class _ChatPageState extends State<ChatPage> {
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             color: isMe
-                                ? _white.withOpacity(0.6)
-                                : _grey600.withOpacity(0.6),
+                                ? Colors.white.withOpacity(0.6)
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                         if (isMe) ...[
@@ -502,6 +479,8 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildInputBar() {
+    final sp = Provider.of<SettingsProvider>(context);
+    final isDark = sp.isDarkMode;
     return Container(
       padding: EdgeInsets.only(
         left: 16,
@@ -510,11 +489,11 @@ class _ChatPageState extends State<ChatPage> {
         bottom: MediaQuery.of(context).padding.bottom + 12,
       ),
       decoration: BoxDecoration(
-        color: _white,
+        color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: _purple.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -526,15 +505,15 @@ class _ChatPageState extends State<ChatPage> {
             child: TextField(
               controller: _controller,
               onSubmitted: (_) => _sendMessage(),
-              style: GoogleFonts.poppins(fontSize: 14, color: _purpleDark),
+              style: GoogleFonts.poppins(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
-                hintText: "Ketik pesan...",
+                hintText: sp.translate('type_message'),
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 13,
-                  color: _grey600.withOpacity(0.5),
+                  color: (isDark ? Colors.white : Theme.of(context).colorScheme.onSurface).withOpacity(0.5),
                 ),
                 filled: true,
-                fillColor: _purpleBg.withOpacity(0.5),
+                fillColor: Theme.of(context).scaffoldBackgroundColor,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 border: OutlineInputBorder(
@@ -550,13 +529,11 @@ class _ChatPageState extends State<ChatPage> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [_purple, _purpleLight],
-                ),
+                color: Theme.of(context).primaryColor,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: _purple.withOpacity(0.3),
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -568,10 +545,10 @@ class _ChatPageState extends State<ChatPage> {
                       height: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(_white),
+                        valueColor: AlwaysStoppedAnimation(Colors.white),
                       ),
                     )
-                  : const Icon(Icons.send_rounded, color: _white, size: 22),
+                  : const Icon(Icons.send_rounded, color: Colors.white, size: 22),
             ),
           ),
         ],

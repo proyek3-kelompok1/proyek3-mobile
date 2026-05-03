@@ -82,8 +82,8 @@ class ShimmerBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final animation = ShimmerLoading.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-    final highlightColor = isDark ? Colors.grey[600]! : Colors.grey[100]!;
+    final baseColor = isDark ? const Color(0xFF1E1E2C) : Colors.grey[300]!;
+    final highlightColor = isDark ? const Color(0xFF2D2D3F) : Colors.grey[100]!;
 
     return AnimatedBuilder(
       animation: animation,
@@ -124,7 +124,7 @@ class ShimmerCard extends StatelessWidget {
       margin: margin,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 0,
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       child: Padding(
         padding: padding,
         child: Column(
