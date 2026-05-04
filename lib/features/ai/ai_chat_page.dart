@@ -407,15 +407,26 @@ class _AiChatPageState extends State<AiChatPage> with TickerProviderStateMixin {
 
   Widget _buildTyping(SettingsProvider sp) {
     return Padding(
-      padding: const EdgeInsets.only(left: 16, bottom: 8),
-      child: Row(
-        children: [
-          Container(width: 24, height: 24, decoration: const BoxDecoration(color: _purple, shape: BoxShape.circle), child: const Icon(Icons.pets, size: 12, color: Colors.white)),
-          const SizedBox(width: 8),
-          Text(sp.translate('analyzing'), style: GoogleFonts.poppins(fontSize: 11, fontStyle: FontStyle.italic, color: _grey600)),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Column(
+          children: [
+            const _ThinkingAnimation(),
+            const SizedBox(height: 8),
+            Text(
+              sp.translate('analyzing'),
+              style: GoogleFonts.poppins(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF00E676),
+                letterSpacing: 1.1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
+
   }
 
   Widget _buildSuggestionBar(SettingsProvider sp) {
@@ -516,6 +527,79 @@ class _AiChatPageState extends State<AiChatPage> with TickerProviderStateMixin {
   }
 
   // Deleted duplicate _addError
+}
+
+
+
+class _ThinkingAnimation extends StatefulWidget {
+  const _ThinkingAnimation();
+
+  @override
+  State<_ThinkingAnimation> createState() => _ThinkingAnimationState();
+}
+
+class _ThinkingAnimationState extends State<_ThinkingAnimation> with TickerProviderStateMixin {
+  late List<AnimationController> _controllers;
+  late List<Animation<double>> _animations;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = List.generate(3, (i) => AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    ));
+
+    _animations = _controllers.map((c) => Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: c, curve: Curves.easeInOut),
+    )).toList();
+
+    _startAnimations();
+  }
+
+  void _startAnimations() async {
+    for (int i = 0; i < 3; i++) {
+      if (!mounted) return;
+      _controllers[i].repeat(reverse: true);
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (var c in _controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (i) => AnimatedBuilder(
+        animation: _animations[i],
+        builder: (context, child) {
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: const Color(0xFF00E676).withOpacity(_animations[i].value),
+              borderRadius: BorderRadius.circular(2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF00E676).withOpacity(_animations[i].value * 0.4),
+                  blurRadius: 6,
+                  spreadRadius: 0.5,
+                )
+              ],
+            ),
+          );
+        },
+      )),
+    );
+  }
 }
 
 class _MessageTile extends StatelessWidget {

@@ -575,7 +575,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Pemesanan Berhasil! 🎉",
+                  "Pemesanan Berhasil!",
                   style: GoogleFonts.poppins(
                     color: _white,
                     fontSize: 20,

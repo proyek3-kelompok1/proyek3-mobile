@@ -46,35 +46,59 @@ class _ChatPageState extends State<ChatPage> {
   bool _sending = false;
   String? _error;
   Timer? _pollTimer;
+  Timer? _statusPollTimer;
+  Timer? _typingTimer;
+
+  // Realtime state
+  ConsultationModel? _liveSession;
+  bool _isOtherTyping = false;
 
   @override
   void initState() {
     super.initState();
     _initConsultation();
+    _controller.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _scrollController.dispose();
     _pollTimer?.cancel();
+    _statusPollTimer?.cancel();
+    _typingTimer?.cancel();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (_consultationId == null) return;
+    // Notify server this user is typing (debounced)
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(milliseconds: 800), () {
+      if (_controller.text.trim().isNotEmpty) {
+        ConsultationApi.sendTyping(_consultationId!);
+      }
+    });
   }
 
   Future<void> _initConsultation() async {
     try {
       if (widget.session != null) {
         _consultationId = widget.session!.id;
+        _liveSession = widget.session;
       } else if (widget.doctor != null) {
         final consultation = await ConsultationApi.createConsultation(
           doctorId: widget.doctor!.id,
         );
         _consultationId = consultation.id;
+        _liveSession = consultation;
       }
-      
+
       if (_consultationId != null) {
         await _loadMessages();
         _startPolling();
+        _startStatusPolling();
       }
       setState(() => _loading = false);
     } catch (e) {
@@ -91,6 +115,20 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  void _startStatusPolling() {
+    // Poll online status + typing indicator every 3 seconds
+    _statusPollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      if (_consultationId == null || !mounted) return;
+      final session = await ConsultationApi.fetchConsultation(_consultationId!);
+      if (session != null && mounted) {
+        setState(() {
+          _liveSession = session;
+          _isOtherTyping = session.isTyping;
+        });
+      }
+    });
+  }
+
   Future<void> _loadMessages() async {
     if (_consultationId == null) return;
     try {
@@ -100,6 +138,7 @@ class _ChatPageState extends State<ChatPage> {
           _messages.clear();
           _messages.addAll(msgs);
         });
+        _scrollToBottom();
       }
     } catch (_) {}
   }
@@ -193,15 +232,29 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _buildHeader() {
     final sp = Provider.of<SettingsProvider>(context, listen: false);
-    final title = widget.isDoctor 
-        ? (widget.session?.userName ?? sp.translate('patient'))
-        : (widget.session?.doctorName != null ? "Dr. ${widget.session!.doctorName}" : (widget.doctor?.name != null ? "Dr. ${widget.doctor!.name}" : "Dr. ${widget.session?.userName ?? 'Dokter'}"));
+    final effectiveSession = _liveSession ?? widget.session;
     
-    final subTitle = widget.session?.isOnline == true ? sp.translate('online') : sp.translate('offline');
-    
-    final avatarUrl = widget.isDoctor 
-        ? widget.session?.userAvatar 
-        : (widget.session?.userAvatar ?? widget.doctor?.photoUrl); 
+    final title = widget.isDoctor
+        ? (effectiveSession?.userName ?? sp.translate('patient'))
+        : (effectiveSession?.doctorName != null
+            ? "Dr. ${effectiveSession!.doctorName}"
+            : (widget.doctor?.name != null
+                ? "Dr. ${widget.doctor!.name}"
+                : "Dr. ${effectiveSession?.userName ?? 'Dokter'}"));
+
+    final bool isOnline = effectiveSession?.isOnline ?? widget.doctor?.isOnline ?? false;
+
+    // Subtitle: mengetik > online > offline
+    String subTitle;
+    if (_isOtherTyping) {
+      subTitle = sp.translate('typing') != 'typing' ? sp.translate('typing') : 'Sedang mengetik...';
+    } else {
+      subTitle = isOnline ? sp.translate('online') : sp.translate('offline');
+    }
+
+    final avatarUrl = widget.isDoctor
+        ? effectiveSession?.userAvatar
+        : (effectiveSession?.doctorAvatar ?? effectiveSession?.userAvatar ?? widget.doctor?.photoUrl);
 
     return Container(
       width: double.infinity,
@@ -211,9 +264,9 @@ class _ChatPageState extends State<ChatPage> {
         right: 16,
         bottom: 16,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: _purple,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
@@ -228,8 +281,7 @@ class _ChatPageState extends State<ChatPage> {
                 color: _white.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.arrow_back_rounded,
-                  color: _white, size: 20),
+              child: const Icon(Icons.arrow_back_rounded, color: _white, size: 20),
             ),
           ),
           const SizedBox(width: 12),
@@ -241,20 +293,19 @@ class _ChatPageState extends State<ChatPage> {
                 backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
                 child: avatarUrl == null ? const Icon(Icons.person_rounded, color: _white, size: 20) : null,
               ),
-              if (widget.session?.isOnline == true)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: _white, width: 2),
-                    ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: isOnline ? Colors.green : Colors.grey,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _white, width: 2),
                   ),
                 ),
+              ),
             ],
           ),
           const SizedBox(width: 12),
@@ -270,12 +321,19 @@ class _ChatPageState extends State<ChatPage> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                Text(
-                  subTitle,
-                  style: GoogleFonts.poppins(
-                    color: widget.session?.isOnline == true ? Colors.greenAccent : _white.withOpacity(0.7),
-                    fontSize: 11,
-                    fontWeight: widget.session?.isOnline == true ? FontWeight.bold : FontWeight.normal,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    subTitle,
+                    key: ValueKey(subTitle),
+                    style: GoogleFonts.poppins(
+                      color: _isOtherTyping
+                          ? Colors.greenAccent
+                          : (isOnline ? Colors.greenAccent : _white.withOpacity(0.7)),
+                      fontSize: 11,
+                      fontWeight: (_isOtherTyping || isOnline) ? FontWeight.bold : FontWeight.normal,
+                      fontStyle: _isOtherTyping ? FontStyle.italic : FontStyle.normal,
+                    ),
                   ),
                 ),
               ],
@@ -301,8 +359,7 @@ class _ChatPageState extends State<ChatPage> {
                 color: _purple.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.chat_bubble_outline_rounded,
-                  color: _purple, size: 48),
+              child: const Icon(Icons.chat_bubble_outline_rounded, color: _purple, size: 48),
             ),
             const SizedBox(height: 20),
             Text(
@@ -315,7 +372,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              sp.translate('start_chat_desc').replaceAll('{name}', widget.doctor?.name ?? widget.session?.doctorName ?? "Dokter"),
+              sp.translate('start_chat_desc').replaceAll('{name}', widget.doctor?.name ?? _liveSession?.doctorName ?? widget.session?.doctorName ?? "Dokter"),
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
@@ -338,8 +395,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: _purpleAccent, size: 48),
+            const Icon(Icons.error_outline_rounded, color: _purpleAccent, size: 48),
             const SizedBox(height: 12),
             Text(
               sp.translate('fail_start_chat'),
@@ -376,36 +432,30 @@ class _ChatPageState extends State<ChatPage> {
   Widget _buildBubble(MessageModel msg) {
     final myRole = widget.isDoctor ? 'doctor' : 'user';
     final isMe = msg.senderType == myRole;
-    
-    final otherAvatarUrl = widget.isDoctor 
-        ? widget.session?.userAvatar 
-        : (widget.session?.userAvatar ?? widget.doctor?.photoUrl);
+    final effectiveSession = _liveSession ?? widget.session;
+
+    final otherAvatarUrl = widget.isDoctor
+        ? effectiveSession?.userAvatar
+        : (effectiveSession?.doctorAvatar ?? effectiveSession?.userAvatar ?? widget.doctor?.photoUrl);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isMe) ...[
             CircleAvatar(
               radius: 16,
               backgroundColor: _purpleBg,
-              backgroundImage: otherAvatarUrl != null
-                  ? NetworkImage(otherAvatarUrl)
-                  : null,
-              child: otherAvatarUrl == null
-                  ? const Icon(Icons.person_rounded,
-                      color: _purple, size: 16)
-                  : null,
+              backgroundImage: otherAvatarUrl != null ? NetworkImage(otherAvatarUrl) : null,
+              child: otherAvatarUrl == null ? const Icon(Icons.person_rounded, color: _purple, size: 16) : null,
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: isMe ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
                 borderRadius: BorderRadius.only(
@@ -416,8 +466,7 @@ class _ChatPageState extends State<ChatPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        (isMe ? Theme.of(context).primaryColor : Colors.black).withOpacity(0.08),
+                    color: (isMe ? Theme.of(context).primaryColor : Colors.black).withOpacity(0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -514,8 +563,7 @@ class _ChatPageState extends State<ChatPage> {
                 ),
                 filled: true,
                 fillColor: Theme.of(context).scaffoldBackgroundColor,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,

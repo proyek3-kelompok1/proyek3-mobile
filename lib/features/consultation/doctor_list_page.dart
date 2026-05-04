@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,6 +38,7 @@ class _DoctorListPageState extends State<DoctorListPage> with SingleTickerProvid
   List<int> _archivedChatIds = [];
   int _unreadCount = 0;
   int _archivedUnreadCount = 0;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -46,6 +48,10 @@ class _DoctorListPageState extends State<DoctorListPage> with SingleTickerProvid
     _chatFuture = ConsultationApi.fetchSessions();
     _loadArchived();
     _calculateUnread();
+    // Auto-refresh active consultations every 8 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (mounted) _refreshChats();
+    });
   }
 
   Future<void> _loadArchived() async {
@@ -105,6 +111,7 @@ class _DoctorListPageState extends State<DoctorListPage> with SingleTickerProvid
   @override
   void dispose() {
     _tabController.dispose();
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
@@ -542,7 +549,14 @@ class _DoctorListPageState extends State<DoctorListPage> with SingleTickerProvid
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => ChatPage(doctor: doctor, isDoctor: false))).then((_) => _refreshChats());
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ChatPage(doctor: doctor, isDoctor: false)),
+                    ).then((_) {
+                      _refreshChats();
+                      // Switch to active consultations tab
+                      _tabController.animateTo(1);
+                    });
                   },
                   icon: const Icon(Icons.chat_rounded, size: 20),
                   label: Text(Provider.of<SettingsProvider>(context, listen: false).translate('start_consultation'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 15)),

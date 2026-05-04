@@ -86,55 +86,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
               alignment: Alignment.center,
               children: [
                 Container(
-                  height: 220,
+                  height: 200,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF13131C) : primaryColor,
+                    gradient: LinearGradient(
+                      colors: isDark 
+                        ? [const Color(0xFF13131C), const Color(0xFF252535)]
+                        : [primaryColor, secondaryColor],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(50),
                       bottomRight: Radius.circular(50),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark ? Colors.black45 : const Color(0x404A1059),
+                        color: isDark ? Colors.black45 : primaryColor.withOpacity(0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
                     ],
                   ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      child: Column(
-                        children: [
-                          Text(
-                            settingsProvider.translate('my_profile'),
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
                 Positioned(
-                  top: 140,
-                  child: Hero(
-                    tag: 'profile_pic',
-                    child: ProfilePic(
-                      avatarUrl: _userData?['avatar'],
-                      borderColor: isDark ? const Color(0xFF8E24AA) : Colors.white,
-                    ),
+                  top: MediaQuery.of(context).padding.top + 10,
+                  child: Column(
+                    children: [
+                      Text(
+                        settingsProvider.translate('my_profile'),
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 25),
+                      Hero(
+                        tag: 'profile_pic',
+                        child: ProfilePic(
+                          avatarUrl: _userData?['avatar'],
+                          borderColor: isDark ? const Color(0xFF8E24AA) : Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 85),
+            const SizedBox(height: 75),
 
             // User Info Section
             Column(
