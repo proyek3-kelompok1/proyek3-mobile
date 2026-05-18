@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/app_notification_model.dart';
+import '../constants/api_constants.dart';
 
 class NotificationApi {
-  // Use the same base URL logic as your other APIs
-  final String baseUrl = 'http://192.168.18.23:8000/api'; // Sesuaikan IP
+  final String baseUrl = ApiConstants.baseUrl;
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return prefs.getString('auth_token');
   }
 
   Future<List<AppNotificationModel>> getNotifications() async {

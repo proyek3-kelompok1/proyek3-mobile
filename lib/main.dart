@@ -11,6 +11,9 @@ import 'features/auth/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Disable google_fonts runtime HTTP fetching — pakai font bundled saja
+  GoogleFonts.config.allowRuntimeFetching = false;
   
   // 1. Initialize Firebase
   await Firebase.initializeApp();
@@ -64,10 +67,8 @@ class MyApp extends StatelessWidget {
           primary: Color(0xFF9D50BB),
           secondary: Color(0xFF6E48AA),
           surface: Color(0xFF1E1E2C),
-          background: const Color(0xFF13131C),
           onPrimary: Colors.white,
           onSurface: Colors.white,
-          onBackground: Colors.white,
         ),
         textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
         visualDensity: VisualDensity.adaptivePlatformDensity,

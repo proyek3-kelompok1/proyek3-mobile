@@ -13,12 +13,12 @@ class ReverbService {
   bool _isInitialized = false;
   String? _currentToken;
 
-  // Reverb Configuration from Laravel .env
+  // Reverb Configuration — sesuai Laravel .env lokal
   static const String appKey = 'aqk7uvcj07urqnwj9fss';
-  static const String host = 'ipzonex.my.id';
-  static const int port = 443;
-  static const String scheme = 'https';
-  static const String cluster = 'mt1'; // Default cluster
+  static const String host = '10.0.160.138';
+  static const int port = 8080;
+  static const String scheme = 'http';
+  static const String cluster = 'mt1';
 
   Future<void> init() async {
     if (_isInitialized) {
@@ -90,7 +90,7 @@ class ReverbService {
   ) async {
     // This should call your Laravel broadcasting/auth endpoint
     final response = await http.post(
-      Uri.parse('https://ipzonex.my.id/broadcasting/auth'),
+      Uri.parse('http://10.0.160.138:8000/broadcasting/auth'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

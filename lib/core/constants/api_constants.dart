@@ -1,6 +1,6 @@
 ﻿class ApiConstants {
-  static const String baseUrl = "https://ipzonex.my.id/api";
-  static const String storageUrl = "https://ipzonex.my.id/storage";
+  static const String baseUrl = "http://10.0.160.138:8000/api";
+  static const String storageUrl = "http://10.0.160.138:8000/storage";
   static const String education = "$baseUrl/education";
   static const String services = "$baseUrl/services";
   static const String booking = "$baseUrl/bookings";

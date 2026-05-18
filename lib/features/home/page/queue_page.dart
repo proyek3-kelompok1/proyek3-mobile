@@ -47,8 +47,8 @@ class _QueuePageState extends State<QueuePage> {
     super.initState();
     if (widget.bookingCode != null) {
       _codeController.text = widget.bookingCode!;
-      _checkMyQueue();
-    }
+      _checkMyQueue(Provider.of<SettingsProvider>(context, listen: false));//ketmbah tadi nya cuma () doang
+    } 
     _loadQueueList();
   }
 

@@ -5,6 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import 'notification_service.dart';
 
+// Helper: strip UTF-8 BOM (ï»¿) sebelum jsonDecode
+dynamic _decodeBody(String body) {
+  // Hapus BOM jika ada
+  final cleaned = body.trimLeft().replaceFirst('\uFEFF', '');
+  return jsonDecode(cleaned);
+}
+
 class AuthApi {
   // Masukkan Web Client ID di sini agar bisa digunakan untuk verifikasi di Backend
   final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -59,7 +66,7 @@ class AuthApi {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _decodeBody(response.body);
         final String accessToken = data['access_token'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_data', jsonEncode(data['user']));
@@ -74,7 +81,7 @@ class AuthApi {
       } else {
         print('Login Gagal: ${response.body}');
         // Kembalikan body agar UI bisa baca pesan error 'not_verified'
-        return jsonDecode(response.body);
+        return _decodeBody(response.body);
       }
     } catch (e) {
       print('Login Error: $e');
@@ -98,7 +105,7 @@ class AuthApi {
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return _decodeBody(response.body);
       } else {
         print('Verifikasi Gagal: ${response.body}');
         return null;
@@ -124,7 +131,7 @@ class AuthApi {
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return _decodeBody(response.body);
       } else {
         print('Resend OTP Gagal: ${response.body}');
         return null;
@@ -152,7 +159,7 @@ class AuthApi {
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return _decodeBody(response.body);
       } else {
         print('Registrasi Gagal: ${response.body}');
         return null;
@@ -180,7 +187,7 @@ class AuthApi {
       print('Response Backend Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _decodeBody(response.body);
         final String accessToken = data['access_token'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_data', jsonEncode(data['user']));
@@ -220,7 +227,7 @@ class AuthApi {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _decodeBody(response.body);
         await prefs.setString('user_data', jsonEncode(data));
         await prefs.setString('user_role', data['role'] ?? 'user');
         await prefs.setString('user_name', data['name'] ?? 'User');
@@ -257,7 +264,7 @@ class AuthApi {
       var response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _decodeBody(response.body);
         await prefs.setString('user_data', jsonEncode(data['user']));
         return true;
       }
