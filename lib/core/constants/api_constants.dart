@@ -1,4 +1,4 @@
-class ApiConstants {
+﻿class ApiConstants {
   static const String baseUrl = "https://ipzonex.my.id/api";
   static const String storageUrl = "https://ipzonex.my.id/storage";
   static const String education = "$baseUrl/education";

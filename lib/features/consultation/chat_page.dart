@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import '../../models/consultation_model.dart';
 import '../../models/doctor_model.dart';
 import '../../models/message_model.dart';
 import '../../core/services/consultation_api.dart';
+import '../../core/services/reverb_service.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/settings_provider.dart';
 
@@ -53,6 +55,11 @@ class _ChatPageState extends State<ChatPage> {
   ConsultationModel? _liveSession;
   bool _isOtherTyping = false;
 
+  // Reverb WebSocket
+  final ReverbService _reverbService = ReverbService();
+  PusherChannel? _channel;
+  bool _useWebSocket = true; // Toggle untuk fallback ke polling
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +75,12 @@ class _ChatPageState extends State<ChatPage> {
     _pollTimer?.cancel();
     _statusPollTimer?.cancel();
     _typingTimer?.cancel();
+    
+    // Unsubscribe from WebSocket channel
+    if (_consultationId != null) {
+      _reverbService.unsubscribe('private-consultation.$_consultationId');
+    }
+    
     super.dispose();
   }
 
@@ -97,7 +110,18 @@ class _ChatPageState extends State<ChatPage> {
 
       if (_consultationId != null) {
         await _loadMessages();
-        _startPolling();
+        
+        // Try to initialize WebSocket
+        if (_useWebSocket) {
+          await _initWebSocket();
+        }
+        
+        // Fallback to polling if WebSocket fails
+        if (!_useWebSocket || !_reverbService.isInitialized) {
+          debugPrint('⚠️ Using polling fallback');
+          _startPolling();
+        }
+        
         _startStatusPolling();
       }
       setState(() => _loading = false);
@@ -109,7 +133,62 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _initWebSocket() async {
+    try {
+      debugPrint('🔌 Initializing Reverb WebSocket for consultation $_consultationId');
+      
+      // Initialize Reverb service
+      await _reverbService.init();
+      
+      if (!_reverbService.isInitialized) {
+        debugPrint('❌ Reverb not initialized, falling back to polling');
+        _useWebSocket = false;
+        return;
+      }
+
+      // Subscribe to consultation channel
+      _channel = await _reverbService.subscribeToConsultation(
+        _consultationId!,
+        _onWebSocketMessage,
+      );
+
+      if (_channel != null) {
+        debugPrint('✅ Successfully subscribed to WebSocket channel');
+      } else {
+        debugPrint('❌ Failed to subscribe, falling back to polling');
+        _useWebSocket = false;
+      }
+    } catch (e) {
+      debugPrint('❌ WebSocket initialization error: $e');
+      _useWebSocket = false;
+    }
+  }
+
+  void _onWebSocketMessage(PusherEvent event) {
+    debugPrint('📨 WebSocket message received: ${event.eventName}');
+    
+    if (event.eventName == 'message.sent') {
+      try {
+        // Parse the message data
+        final data = event.data;
+        debugPrint('   Data: $data');
+        
+        // Reload messages to get the new one
+        _loadMessages();
+      } catch (e) {
+        debugPrint('❌ Error parsing WebSocket message: $e');
+      }
+    }
+  }
+
   void _startPolling() {
+    // Only use polling if WebSocket is not active
+    if (_useWebSocket && _reverbService.isInitialized) {
+      debugPrint('✅ WebSocket active, skipping polling');
+      return;
+    }
+    
+    debugPrint('⚠️ Starting polling fallback');
     _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       _loadMessages();
     });
